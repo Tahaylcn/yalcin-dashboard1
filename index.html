@@ -236,7 +236,11 @@ function AuthScreen() {
     setLoading(true);
     const { data, error } = await sb.auth.signUp({ email, password: pw });
     setLoading(false);
-    if (error) setErr(error.message);
+    if (error) {
+      if (error.message.includes('rate limit')) setErr('Çok fazla deneme yapıldı, lütfen 1 saat bekle veya farklı bir e-posta kullan.');
+      else if (error.message.includes('already registered')) setErr('Bu e-posta zaten kayıtlı, Giriş Yap sekmesini kullan.');
+      else setErr(error.message);
+    }
     else if (data.session) { setOk('Kayıt başarılı! Giriş yapılıyor...'); }
     else { setOk('✅ Kayıt başarılı! E-postana doğrulama maili gönderildi. Maildeki linke tıklayınca otomatik giriş yapacaksın.'); }
   };
