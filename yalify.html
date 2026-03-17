@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Yalify — Dropshipping Dashboard</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6366f1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Yalify">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    body{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;background:#f0f4f8;margin:0}
+    .spin{animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    ::-webkit-scrollbar{width:5px;height:5px}
+    ::-webkit-scrollbar-track{background:#f0f4f8}
+    ::-webkit-scrollbar-thumb{background:#94a3b8;border-radius:3px}
+    input:focus,select:focus,textarea:focus{outline:none}
+    .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center;padding:0}
+    @media(min-width:640px){.modal-bg{align-items:center;padding:16px}}
+    .modal{background:#fff;width:100%;max-width:640px;max-height:92vh;overflow-y:auto;border-radius:20px 20px 0 0;padding:24px}
+    @media(min-width:640px){.modal{border-radius:20px}}
+    .tbl td,.tbl th{padding:10px 12px;border-bottom:1px solid #e2e8f0;white-space:nowrap}
+    .tbl th{background:#f8fafc;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b;cursor:pointer;user-select:none}
+    .tbl th:hover{background:#f1f5f9}
+    .tbl tr:hover td{background:#f8fafc}
+    .tbl td{font-size:13px;color:#1e293b}
+    .status-test{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+    .status-kazaniyor{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+    .status-reddedildi{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+    .status-arastirma{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
+    .chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+    .inp{width:100%;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 12px;font-size:14px;color:#1e293b;transition:.15s}
+    .inp:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+    .btn-primary{background:#6366f1;color:#fff;font-weight:700;border:none;border-radius:12px;padding:11px 20px;cursor:pointer;font-size:14px;transition:.15s;width:100%}
+    .btn-primary:hover{background:#4f46e5}
+    .btn-secondary{background:#f1f5f9;color:#475569;font-weight:600;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 16px;cursor:pointer;font-size:13px;transition:.15s}
+    .btn-secondary:hover{background:#e2e8f0}
+    .card{background:#fff;border-radius:16px;border:1.5px solid #e2e8f0;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+    label.lbl{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b;margin-bottom:4px}
+    .score-btn{width:28px;height:28px;border-radius:6px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:700;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.1s}
+    .score-btn.active{background:#6366f1;color:#fff;border-color:#6366f1}
+    .auth-bg{min-height:100vh;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#06b6d4 100%);display:flex;align-items:center;justify-content:center;padding:16px}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo, useCallback, useEffect, useRef } = React;
+
+/* ═══ SUPABASE ═══ */
+const SUPA_URL = 'https://iqbjzltpwidtwjpkjnvb.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxYmp6bHRwd2lkdHdqcGtqbnZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEwNjUsImV4cCI6MjA4OTM1NzA2NX0.FoBUxvtzX8vHgfA6q_84Ysg80cZsF4iO5xQ4QTCv_RU';
+const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+const TRIAL_DAYS = 3;
+const PLAN_PRICE = '$10/ay';
+// Stripe ödeme linki — oluşturduktan sonra buraya yaz:
+const STRIPE_LINK = 'https://buy.stripe.com/3cIcN692j2cR3dqecjdEs00';
+
+/* ═══ UTILS ═══ */
+const n   = v => parseFloat(v) || 0;
+const $$  = (v, d = 2) => n(v).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+const uid = () => Math.random().toString(36).slice(2, 9);
+const today = () => new Date().toISOString().slice(0, 10);
+const fmtDate = d => d ? new Date(d).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: '2-digit' }) : '—';
+const fmtDateTime = d => d ? new Date(d).toLocaleString('tr-TR', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+
+function getTrialInfo(profile) {
+  if (!profile) return { status: 'loading', daysLeft: 0 };
+  if (profile.subscription_status === 'active') return { status: 'active', daysLeft: null };
+  const start = new Date(profile.trial_started_at);
+  const daysPassed = Math.floor((Date.now() - start) / 86400000);
+  const daysLeft = Math.max(0, TRIAL_DAYS - daysPassed);
+  if (daysLeft > 0) return { status: 'trial', daysLeft };
+  return { status: 'expired', daysLeft: 0 };
+}
+
+/* ═══ CLOUD SYNC HOOK ═══ */
+function useCloudData(tableName, userId) {
+  const [data, setDataRaw] = useState([]);
+  const [ready, setReady] = useState(false);
+  const saveRef = useRef(null);
+
+  useEffect(() => {
+    if (!userId) { setDataRaw([]); setReady(false); return; }
+    sb.from(tableName).select('id, data').eq('user_id', userId)
+      .then(({ data: rows }) => {
+        if (rows && rows.length > 0) setDataRaw(rows.map(r => r.data));
+        setReady(true);
+      });
+  }, [userId, tableName]);
+
+  const setData = useCallback((newData) => {
+    const val = typeof newData === 'function' ? newData(data) : newData;
+    setDataRaw(val);
+    if (!userId) return;
+    clearTimeout(saveRef.current);
+    saveRef.current = setTimeout(async () => {
+      await sb.from(tableName).delete().eq('user_id', userId);
+      if (val.length > 0) {
+        await sb.from(tableName).insert(val.map(item => ({ id: item.id, user_id: userId, data: item })));
+      }
+    }, 1500);
+  }, [userId, tableName, data]);
+
+  return [data, setData, ready];
+}
+
+/* ═══ SHARED UI ═══ */
+function Field({ label, children }) {
+  return (
+    <div className="space-y-1">
+      {label && <label className="lbl">{label}</label>}
+      {children}
+    </div>
+  );
+}
+function MoneyInp({ label, value, onChange, hint }) {
+  return (
+    <Field label={label}>
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm select-none">$</span>
+        <input type="number" value={value} onChange={onChange} placeholder="0.00" className="inp pl-6" step="0.01" min="0" />
+      </div>
+      {hint && <p className="text-xs text-slate-400 mt-0.5">{hint}</p>}
+    </Field>
+  );
+}
+function PctInp({ label, value, onChange }) {
+  return (
+    <Field label={label}>
+      <div className="relative">
+        <input type="number" value={value} onChange={onChange} placeholder="0" className="inp pr-7" step="0.1" min="0" />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm select-none">%</span>
+      </div>
+    </Field>
+  );
+}
+function StatusChip({ durum }) {
+  const cfg = {
+    arastirma: { cls: 'status-arastirma', label: '🔍 Araştırma' },
+    test:       { cls: 'status-test',      label: '🧪 Test' },
+    kazaniyor:  { cls: 'status-kazaniyor', label: '✅ Kazanıyor' },
+    reddedildi: { cls: 'status-reddedildi',label: '❌ Reddedildi' },
+  };
+  const c = cfg[durum] || cfg.arastirma;
+  return <span className={`chip ${c.cls}`}>{c.label}</span>;
+}
+function KPI({ label, value, sub, icon, color = 'indigo' }) {
+  const bg = {
+    indigo: 'border-indigo-100 bg-indigo-50 text-indigo-700',
+    green:  'border-emerald-100 bg-emerald-50 text-emerald-700',
+    red:    'border-red-100 bg-red-50 text-red-600',
+    amber:  'border-amber-100 bg-amber-50 text-amber-700',
+    purple: 'border-purple-100 bg-purple-50 text-purple-700',
+    sky:    'border-sky-100 bg-sky-50 text-sky-700',
+    slate:  'border-slate-200 bg-slate-50 text-slate-700',
+    emerald:'border-emerald-100 bg-emerald-50 text-emerald-700',
+  };
+  return (
+    <div className={`rounded-2xl border p-4 ${bg[color] || bg.indigo}`}>
+      <div className="flex justify-between items-start">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider opacity-60">{label}</p>
+          <p className="text-2xl font-black mt-1 leading-none">{value}</p>
+          {sub && <p className="text-xs mt-1.5 opacity-60">{sub}</p>}
+        </div>
+        {icon && <span className="text-2xl opacity-80">{icon}</span>}
+      </div>
+    </div>
+  );
+}
+function Modal({ title, onClose, children }) {
+  useEffect(() => {
+    const esc = e => e.key === 'Escape' && onClose();
+    document.addEventListener('keydown', esc);
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', esc); document.body.style.overflow = ''; };
+  }, []);
+  return (
+    <div className="modal-bg" onClick={onClose}>
+      <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-5">
+          <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-3xl leading-none">&times;</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/* ═══ LOADING SCREEN ═══ */
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500">
+      <div className="text-center text-white">
+        <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <span className="text-3xl font-black">Y</span>
+        </div>
+        <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full spin mx-auto mt-4" />
+      </div>
+    </div>
+  );
+}
+
+/* ═══ AUTH SCREEN ═══ */
+function AuthScreen() {
+  const [mod, setMod] = useState('login');
+  const [email, setEmail] = useState('');
+  const [pw, setPw] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const [ok, setOk] = useState('');
+
+  const login = async () => {
+    setErr(''); setLoading(true);
+    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+    setLoading(false);
+    if (error) setErr(error.message === 'Invalid login credentials' ? 'E-posta veya şifre hatalı' : error.message);
+  };
+
+  const register = async () => {
+    setErr('');
+    if (pw !== pw2) return setErr('Şifreler eşleşmiyor');
+    if (pw.length < 6) return setErr('Şifre en az 6 karakter olmalı');
+    setLoading(true);
+    const { error } = await sb.auth.signUp({ email, password: pw });
+    setLoading(false);
+    if (error) setErr(error.message);
+    else { setOk('Kayıt başarılı! Giriş yapılıyor...'); }
+  };
+
+  return (
+    <div className="auth-bg">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-xl">
+            <span className="text-3xl font-black text-indigo-600">Y</span>
+          </div>
+          <h1 className="text-3xl font-black text-white">Yalify</h1>
+          <p className="text-white/70 text-sm mt-1">Dropshipping Dashboard</p>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white rounded-3xl p-8 shadow-2xl">
+          {/* Tabs */}
+          <div className="flex bg-slate-100 rounded-xl p-1 mb-6">
+            {[['login','Giriş Yap'],['register','Kayıt Ol']].map(([m, l]) => (
+              <button key={m} onClick={() => { setMod(m); setErr(''); setOk(''); }}
+                className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${mod === m ? 'bg-white shadow text-indigo-600' : 'text-slate-500'}`}>
+                {l}
+              </button>
+            ))}
+          </div>
+
+          {mod === 'register' && (
+            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-4 text-center">
+              <p className="text-sm font-bold text-indigo-700">🎉 {TRIAL_DAYS} gün ücretsiz dene!</p>
+              <p className="text-xs text-indigo-500 mt-0.5">Kredi kartı gerekmez</p>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            <Field label="E-posta">
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                className="inp" placeholder="ornek@email.com" autoComplete="email" />
+            </Field>
+            <Field label="Şifre">
+              <input type="password" value={pw} onChange={e => setPw(e.target.value)}
+                className="inp" placeholder="••••••••" autoComplete={mod === 'login' ? 'current-password' : 'new-password'}
+                onKeyDown={e => e.key === 'Enter' && mod === 'login' && login()} />
+            </Field>
+            {mod === 'register' && (
+              <Field label="Şifre Tekrar">
+                <input type="password" value={pw2} onChange={e => setPw2(e.target.value)}
+                  className="inp" placeholder="••••••••" onKeyDown={e => e.key === 'Enter' && register()} />
+              </Field>
+            )}
+
+            {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</p>}
+            {ok  && <p className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{ok}</p>}
+
+            <button onClick={mod === 'login' ? login : register} disabled={loading}
+              className="btn-primary flex items-center justify-center gap-2">
+              {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />}
+              {mod === 'login' ? 'Giriş Yap' : `Ücretsiz Başla (${TRIAL_DAYS} gün)`}
+            </button>
+          </div>
+        </div>
+
+        <p className="text-center text-white/50 text-xs mt-6">
+          Devam ederek <a href="#" className="underline">Kullanım Şartlarını</a> kabul etmiş olursunuz
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ═══ PAYWALL SCREEN ═══ */
+function PaywallScreen({ user, onSignOut }) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500 flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl text-center">
+        <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <span className="text-3xl">⏰</span>
+        </div>
+        <h2 className="text-2xl font-black text-slate-800 mb-2">Deneme Süren Doldu</h2>
+        <p className="text-slate-500 text-sm mb-6">
+          {TRIAL_DAYS} günlük ücretsiz deneme süren tamamlandı.<br />
+          Tüm özelliklere erişmek için abone ol.
+        </p>
+
+        <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-6 mb-6">
+          <p className="text-4xl font-black text-indigo-600">$10</p>
+          <p className="text-slate-500 text-sm">/ ay</p>
+          <div className="mt-4 space-y-2 text-left">
+            {['✅ Sınırsız ürün takibi','✅ Başabaş hesaplama','✅ Sipariş & kâr takibi',
+              '✅ Keyword havuzu','✅ Bütçe yönetimi','✅ Bulut yedekleme','✅ Tüm güncellemeler'].map(f => (
+              <p key={f} className="text-sm text-slate-700">{f}</p>
+            ))}
+          </div>
+        </div>
+
+        <a href={STRIPE_LINK} target="_blank" rel="noreferrer"
+          className="btn-primary block mb-3 no-underline text-center">
+          💳 Şimdi Abone Ol — {PLAN_PRICE}
+        </a>
+        <button onClick={onSignOut} className="text-sm text-slate-400 hover:text-slate-600 transition">
+          Çıkış Yap
+        </button>
+        <p className="text-xs text-slate-400 mt-4">İstediğin zaman iptal edebilirsin</p>
+      </div>
+    </div>
+  );
+}
+
+/* ═══ TRIAL BANNER ═══ */
+function TrialBanner({ daysLeft }) {
+  if (daysLeft === null) return null;
+  return (
+    <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between">
+      <p className="text-xs font-bold text-amber-700">
+        ⏳ Ücretsiz deneme: <strong>{daysLeft} gün</strong> kaldı
+      </p>
+      <a href={STRIPE_LINK} target="_blank" rel="noreferrer"
+        className="text-xs bg-amber-500 text-white font-bold px-3 py-1 rounded-full hover:bg-amber-600 transition">
+        Abone Ol — {PLAN_PRICE}
+      </a>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════
+   TAB 1: ÜRÜN LİSTESİ
+═══════════════════════════════════ */
+function reklamYasi(t) { if (!t) return null; return Math.floor((Date.now()-new Date(t))/86400000); }
+function reklamYasiRenk(g) { if (g===null) return 'text-slate-400'; if (g>=90) return 'text-emerald-600 font-bold'; if (g>=30) return 'text-amber-600 font-semibold'; return 'text-red-500'; }
+function reklamYasiLabel(g) { if (g===null) return '—'; if (g>=365) return `${Math.floor(g/30)}ay`; if (g>=30) return `${Math.floor(g/30)}ay ${g%30}g`; return `${g}g`; }
+
+const BOŞ_ÜRÜN = { id:'',urunAdi:'',durum:'arastirma',fbAdsLink:'',shopifyLink:'',tedarikciLink:'',magazaLink:'',aktifReklam:'',enEskiTarih:'',rakipFiyat:'',tedarikFiyati:'',kargoMaliyeti:'',hedefPazar:'',reklamUlkesi:'',notlar:'',puan:0,eklenTarih:'' };
+
+function UrunFormu({ urun, onSave, onClose, onSil }) {
+  const [f, setF] = useState({ ...BOŞ_ÜRÜN, ...urun });
+  const s = k => e => setF(p => ({ ...p, [k]: e.target.value }));
+  const kaydet = () => {
+    if (!f.urunAdi.trim()) return alert('Ürün adı giriniz');
+    onSave({ ...f, id: f.id || uid(), eklenTarih: f.eklenTarih || new Date().toISOString() });
+  };
+  return (
+    <Modal title={f.id ? 'Ürünü Düzenle' : '+ Yeni Ürün Ekle'} onClose={onClose}>
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="sm:col-span-2">
+            <Field label="Ürün Adı *">
+              <input type="text" value={f.urunAdi} onChange={s('urunAdi')} className="inp" placeholder="ör. Islak Zemin Uyarı Tabelası..." autoFocus />
+            </Field>
+          </div>
+          <Field label="Durum">
+            <select value={f.durum} onChange={s('durum')} className="inp">
+              <option value="arastirma">🔍 Araştırma</option>
+              <option value="test">🧪 Test</option>
+              <option value="kazaniyor">✅ Kazanıyor</option>
+              <option value="reddedildi">❌ Reddedildi</option>
+            </select>
+          </Field>
+          <Field label="Puan (1–10)">
+            <div className="flex gap-1.5 flex-wrap pt-1">
+              {[1,2,3,4,5,6,7,8,9,10].map(p => (
+                <button key={p} onClick={() => setF(x => ({ ...x, puan: p }))}
+                  className={`score-btn ${f.puan === p ? 'active' : ''}`}>{p}</button>
+              ))}
+            </div>
+          </Field>
+        </div>
+        <div className="border-t border-slate-100 pt-4">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">📢 Reklam Bilgileri</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Aktif Reklam Sayısı">
+              <input type="number" value={f.aktifReklam} onChange={s('aktifReklam')} className="inp" placeholder="430" />
+            </Field>
+            <Field label="En Eski Reklam Tarihi">
+              <input type="date" value={f.enEskiTarih} onChange={s('enEskiTarih')} className="inp" />
+            </Field>
+            <div className="col-span-2">
+              <Field label="Reklamın Yayınlandığı Ülkeler">
+                <input type="text" value={f.reklamUlkesi} onChange={s('reklamUlkesi')} className="inp" placeholder="ABD, Almanya, İngiltere..." />
+              </Field>
+            </div>
+            <div className="col-span-2">
+              <Field label="Facebook Ads Library URL">
+                <input type="text" value={f.fbAdsLink} onChange={s('fbAdsLink')} className="inp" placeholder="https://www.facebook.com/ads/library/..." />
+              </Field>
+            </div>
+          </div>
+        </div>
+        <div className="border-t border-slate-100 pt-4">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">💰 Fiyat & Maliyet</p>
+          <div className="grid grid-cols-2 gap-3">
+            <MoneyInp label="Rakip Satış Fiyatı ($)" value={f.rakipFiyat} onChange={s('rakipFiyat')} />
+            <MoneyInp label="Tedarikçi Fiyatı ($)"   value={f.tedarikFiyati} onChange={s('tedarikFiyati')} />
+            <MoneyInp label="Kargo Maliyeti ($)"     value={f.kargoMaliyeti} onChange={s('kargoMaliyeti')} />
+            <Field label="Hedef Pazar">
+              <input type="text" value={f.hedefPazar} onChange={s('hedefPazar')} className="inp" placeholder="Malezya, BAE..." />
+            </Field>
+          </div>
+        </div>
+        <div className="border-t border-slate-100 pt-4">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">🔗 Linkler</p>
+          <div className="space-y-3">
+            <Field label="Shopify Mağaza / Ürün URL">
+              <input type="text" value={f.shopifyLink} onChange={s('shopifyLink')} className="inp" placeholder="https://example.com/products/..." />
+            </Field>
+            <Field label="Rakip Mağaza Linki (Meta'da Bulduğun)">
+              <input type="text" value={f.magazaLink} onChange={s('magazaLink')} className="inp" placeholder="https://rakipmağaza.com" />
+            </Field>
+            <Field label="Tedarikçi / Ajan Linki">
+              <input type="text" value={f.tedarikciLink} onChange={s('tedarikciLink')} className="inp" placeholder="AliExpress, CJ, WhatsApp linki..." />
+            </Field>
+          </div>
+        </div>
+        <div className="border-t border-slate-100 pt-4">
+          <Field label="Notlar">
+            <textarea value={f.notlar} onChange={s('notlar')} rows={3} className="inp resize-none" placeholder="Rakip yorumları, kreatif fikirleri, özel notlar..." />
+          </Field>
+        </div>
+        <div className="flex gap-3 pt-2">
+          <button onClick={kaydet} className="btn-primary">💾 Kaydet</button>
+          {f.id && (
+            <button onClick={() => onSil(f.id)} className="bg-red-50 hover:bg-red-100 text-red-600 font-bold border border-red-200 rounded-xl px-4 transition">🗑️</button>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function UrunListesi({ urunler, setUrunler }) {
+  const [modal, setModal] = useState(null);
+  const [filtre, setFiltre] = useState('hepsi');
+  const [arama, setArama] = useState('');
+  const [siraKey, setSiraKey] = useState('eklenTarih');
+  const [siraDir, setSiraDir] = useState('desc');
+  const sirala = k => { if (siraKey === k) setSiraDir(d => d === 'asc' ? 'desc' : 'asc'); else { setSiraKey(k); setSiraDir('asc'); } };
+  const siraOk = k => siraKey === k ? (siraDir === 'asc' ? ' ↑' : ' ↓') : '';
+
+  const gorunen = useMemo(() => {
+    let list = urunler.filter(u => filtre === 'hepsi' || u.durum === filtre)
+      .filter(u => !arama || u.urunAdi.toLowerCase().includes(arama.toLowerCase()) || (u.hedefPazar||'').toLowerCase().includes(arama.toLowerCase()));
+    list.sort((a, b) => {
+      let av = a[siraKey] ?? '', bv = b[siraKey] ?? '';
+      if (['rakipFiyat','tedarikFiyati','aktifReklam','puan'].includes(siraKey)) { av = n(av); bv = n(bv); }
+      const r = av < bv ? -1 : av > bv ? 1 : 0;
+      return siraDir === 'asc' ? r : -r;
+    });
+    return list;
+  }, [urunler, filtre, arama, siraKey, siraDir]);
+
+  const kaydet = u => { setUrunler(p => p.find(x => x.id === u.id) ? p.map(x => x.id === u.id ? u : x) : [u, ...p]); setModal(null); };
+  const sil = id => { if (confirm('Silmek istediğinize emin misiniz?')) { setUrunler(p => p.filter(x => x.id !== id)); setModal(null); } };
+
+  return (
+    <div className="space-y-4">
+      <div className="card">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input type="text" value={arama} onChange={e => setArama(e.target.value)} placeholder="🔎 Ürün ara..." className="inp sm:w-64" />
+          <div className="flex gap-2 flex-wrap">
+            {[['hepsi','Tümü'],['arastirma','Araştırma'],['test','Test'],['kazaniyor','Kazanıyor'],['reddedildi','Reddedildi']].map(([v,l]) => (
+              <button key={v} onClick={() => setFiltre(v)}
+                className={`text-xs font-bold px-3 py-1.5 rounded-full border transition ${filtre===v ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`}>
+                {l} ({v === 'hepsi' ? urunler.length : urunler.filter(u => u.durum === v).length})
+              </button>
+            ))}
+          </div>
+          <button onClick={() => setModal({})} className="ml-auto btn-primary sm:w-auto whitespace-nowrap">+ Ürün Ekle</button>
+        </div>
+      </div>
+
+      {gorunen.length === 0 ? (
+        <div className="card text-center py-16 text-slate-400">
+          <p className="text-5xl mb-3">📋</p>
+          <p className="font-semibold">Henüz ürün yok</p>
+          <p className="text-sm mt-1">İlk ürününü ekle</p>
+          <button onClick={() => setModal({})} className="btn-primary mt-4 max-w-xs mx-auto">+ Ürün Ekle</button>
+        </div>
+      ) : (
+        <div className="card overflow-x-auto">
+          <table className="tbl w-full">
+            <thead>
+              <tr>
+                <th onClick={() => sirala('urunAdi')} className="text-left min-w-[160px]">Ürün{siraOk('urunAdi')}</th>
+                <th className="text-center">Durum</th>
+                <th onClick={() => sirala('puan')} className="text-center">Puan{siraOk('puan')}</th>
+                <th onClick={() => sirala('aktifReklam')} className="text-right">Rek.{siraOk('aktifReklam')}</th>
+                <th onClick={() => sirala('eklenTarih')} className="text-center">Eklenme{siraOk('eklenTarih')}</th>
+                <th onClick={() => sirala('rakipFiyat')} className="text-right">Rakip{siraOk('rakipFiyat')}</th>
+                <th onClick={() => sirala('tedarikFiyati')} className="text-right">Tedarik{siraOk('tedarikFiyati')}</th>
+                <th className="text-left min-w-[100px]">Pazar</th>
+                <th className="text-center">Linkler</th>
+                <th className="text-left min-w-[160px]">Notlar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {gorunen.map(u => {
+                const gun = reklamYasi(u.enEskiTarih);
+                const margin = u.rakipFiyat > 0 ? ((n(u.rakipFiyat)-n(u.tedarikFiyati)-n(u.kargoMaliyeti))/n(u.rakipFiyat)*100) : null;
+                const mColor = margin === null ? '' : margin > 40 ? 'text-emerald-600' : margin > 20 ? 'text-amber-600' : 'text-red-500';
+                return (
+                  <tr key={u.id} onClick={() => setModal(u)} className="cursor-pointer">
+                    <td><p className="font-semibold text-slate-800 max-w-[200px] truncate">{u.urunAdi}</p></td>
+                    <td className="text-center"><StatusChip durum={u.durum} /></td>
+                    <td className="text-center">
+                      {u.puan > 0 && <span className={`font-black text-sm ${u.puan >= 8 ? 'text-emerald-600' : u.puan >= 5 ? 'text-amber-600' : 'text-red-500'}`}>{u.puan}/10</span>}
+                    </td>
+                    <td className="text-right font-semibold">{u.aktifReklam || '—'}</td>
+                    <td className="text-center text-xs text-slate-500 whitespace-nowrap">{fmtDateTime(u.eklenTarih)}</td>
+                    <td className="text-right">{u.rakipFiyat ? `$${$$(n(u.rakipFiyat))}` : '—'}</td>
+                    <td className="text-right">
+                      {u.tedarikFiyati ? <span>{`$${$$(n(u.tedarikFiyati))}`}{margin !== null && <span className={`ml-1 text-xs ${mColor}`}>({$$(margin,0)}%)</span>}</span> : '—'}
+                    </td>
+                    <td className="text-slate-500 text-xs">{u.hedefPazar || '—'}</td>
+                    <td className="text-center">
+                      <div className="flex gap-1 justify-center" onClick={e => e.stopPropagation()}>
+                        {u.fbAdsLink && <a href={u.fbAdsLink} target="_blank" rel="noreferrer" className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 py-0.5 rounded font-medium transition">FB</a>}
+                        {u.shopifyLink && <a href={u.shopifyLink} target="_blank" rel="noreferrer" className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded font-medium transition">Shop</a>}
+                        {u.magazaLink && <a href={u.magazaLink} target="_blank" rel="noreferrer" className="text-xs bg-orange-50 hover:bg-orange-100 text-orange-600 px-2 py-0.5 rounded font-medium transition">Mağaza</a>}
+                        {u.tedarikciLink && <a href={u.tedarikciLink} target="_blank" rel="noreferrer" className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-0.5 rounded font-medium transition">Tedarik</a>}
+                      </div>
+                    </td>
+                    <td className="text-slate-400 text-xs max-w-[160px] truncate">{u.notlar || '—'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {modal !== null && <UrunFormu urun={modal} onSave={kaydet} onClose={() => setModal(null)} onSil={sil} />}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════
+   TAB 2: BAŞABAŞ
+═══════════════════════════════════ */
+function BasabasHesaplama() {
+  const [f, setF] = useState({ satisFiyati:'49.99', tedarikFiyati:'12', kargoMaliyeti:'4', shopifyTxFee:'1', authPct:'2.9', authSabit:'0.30', iadeOrani:'3', aylikShopify:'105', aylikSiparis:'100', hedefCPA:'' });
+  const s = k => e => setF(p => ({ ...p, [k]: e.target.value }));
+  const sF = n(f.satisFiyati), tF = n(f.tedarikFiyati), kM = n(f.kargoMaliyeti);
+  const shopifyPct = n(f.shopifyTxFee)/100, authPct = n(f.authPct)/100, authSabit = n(f.authSabit), iadePct = n(f.iadeOrani)/100;
+  const sabitPerSiparis = n(f.aylikShopify) / Math.max(n(f.aylikSiparis), 1);
+  const sabitMaliyet = tF + kM + authSabit + sabitPerSiparis;
+  const degiskenPct = shopifyPct + authPct + iadePct;
+  const beP = sabitMaliyet / Math.max(1 - degiskenPct, 0.01);
+  const maxCPA = sF * (1 - degiskenPct) - sabitMaliyet;
+  const brutKar = sF - sabitMaliyet - sF * degiskenPct;
+  const margin = sF > 0 ? (brutKar / sF * 100) : 0;
+  const hedefCPA = n(f.hedefCPA);
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-sm text-indigo-700">
+        <p className="font-bold mb-1">ℹ️ Shopify $105/ay Planı Varsayılanları</p>
+        <p className="text-xs opacity-80">%1 işlem ücreti + Authorize.net %2.9 + $0.30 / sipariş. Değerleri değiştirebilirsin.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="card space-y-4">
+          <p className="text-sm font-bold text-slate-700">💰 Fiyat & Maliyet</p>
+          <div className="grid grid-cols-2 gap-3">
+            <MoneyInp label="Satış Fiyatı ($)" value={f.satisFiyati} onChange={s('satisFiyati')} />
+            <MoneyInp label="Tedarik Fiyatı ($)" value={f.tedarikFiyati} onChange={s('tedarikFiyati')} />
+            <MoneyInp label="Kargo Maliyeti ($)" value={f.kargoMaliyeti} onChange={s('kargoMaliyeti')} />
+            <MoneyInp label="Shopify Aylık ($)" value={f.aylikShopify} onChange={s('aylikShopify')} />
+            <Field label="Tahmini Aylık Sipariş">
+              <input type="number" value={f.aylikSiparis} onChange={s('aylikSiparis')} className="inp" />
+            </Field>
+            <MoneyInp label="Hedef CPA ($)" value={f.hedefCPA} onChange={s('hedefCPA')} />
+          </div>
+        </div>
+        <div className="card space-y-4">
+          <p className="text-sm font-bold text-slate-700">📊 Ücret Oranları</p>
+          <div className="grid grid-cols-2 gap-3">
+            <PctInp label="Shopify TX Ücreti (%)" value={f.shopifyTxFee} onChange={s('shopifyTxFee')} />
+            <PctInp label="Authorize.net (%)" value={f.authPct} onChange={s('authPct')} />
+            <MoneyInp label="Auth.net Sabit ($)" value={f.authSabit} onChange={s('authSabit')} />
+            <PctInp label="İade Oranı (%)" value={f.iadeOrani} onChange={s('iadeOrani')} />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <KPI label="Başabaş Fiyat" value={`$${$$(beP)}`} color={sF > beP ? 'green' : 'red'} icon="⚖️" sub={sF > beP ? `+$${$$(sF-beP)} üstü` : 'Zarar!'} />
+        <KPI label="Maks CPA" value={`$${$$(maxCPA)}`} color={maxCPA > 0 ? 'indigo' : 'red'} icon="🎯" sub="Bu kadar reklam harcayabilirsin" />
+        <KPI label="Kâr Marjı" value={`${$$(margin,1)}%`} color={margin > 40 ? 'green' : margin > 20 ? 'amber' : 'red'} icon="📈" />
+        <KPI label="Sipariş Başı Kâr" value={`$${$$(brutKar)}`} color={brutKar > 0 ? 'green' : 'red'} icon="💰" sub="Reklam öncesi" />
+      </div>
+
+      {hedefCPA > 0 && (
+        <div className={`rounded-2xl border p-4 ${hedefCPA < maxCPA ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+          <p className={`font-bold ${hedefCPA < maxCPA ? 'text-emerald-700' : 'text-red-700'}`}>
+            {hedefCPA < maxCPA ? '✅ Hedef CPA kârlı!' : '❌ Hedef CPA zararlı!'} — Net kâr/sipariş: ${$$(brutKar - hedefCPA)}
+          </p>
+        </div>
+      )}
+
+      <div className="card overflow-x-auto">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">📊 Senaryo Tablosu — Satış Fiyatı × CPA</p>
+        <table className="tbl w-full">
+          <thead>
+            <tr>
+              <th>Fiyat</th>
+              {[5,10,15,20,25,30].map(c => <th key={c} className="text-right">${c} CPA</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {[0.8,0.9,1,1.1,1.2].map(m => {
+              const fp = sF * m;
+              return (
+                <tr key={m}>
+                  <td className="font-bold">${$$(fp)}</td>
+                  {[5,10,15,20,25,30].map(cpa => {
+                    const kar = fp - (tF+kM+authSabit+sabitPerSiparis) - fp*(shopifyPct+authPct+iadePct) - cpa;
+                    return <td key={cpa} className={`text-right font-semibold ${kar > 0 ? 'text-emerald-600' : 'text-red-500'}`}>${$$(kar)}</td>;
+                  })}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════
+   TAB 3: SİPARİŞ & KÂR
+═══════════════════════════════════ */
+function SiparisTracker({ gecmis, setGecmis }) {
+  const bosForm = { id:'',tarih:today(),urunAdi:'',satisFiyati:'',tedarikFiyati:'',kargoMaliyeti:'',reklam:'',shopifyTx:'',authNet:'',diger:'' };
+  const [f, setF] = useState({ ...bosForm });
+  const s = k => e => setF(p => ({ ...p, [k]: e.target.value }));
+  const sF=n(f.satisFiyati), tF=n(f.tedarikFiyati), kM=n(f.kargoMaliyeti), rek=n(f.reklam), shop=n(f.shopifyTx)||sF*0.01, auth=n(f.authNet)||(sF*0.029+0.30), dig=n(f.diger);
+  const topMaliyet = tF+kM+rek+shop+auth+dig;
+  const netKar = sF - topMaliyet;
+  const marj = sF > 0 ? (netKar/sF*100) : 0;
+
+  const ekle = () => {
+    if (!f.urunAdi.trim() || !f.satisFiyati) return alert('Ürün adı ve satış fiyatı giriniz');
+    const kayit = { id:uid(), tarih:f.tarih||today(), urunAdi:f.urunAdi, satisFiyati:sF, tedarikFiyati:tF, kargoMaliyeti:kM, reklam:rek, shopifyTx:shop, authNet:auth, diger:dig, netKar, marj };
+    setGecmis(p => [kayit, ...p]);
+    setF({ ...bosForm });
+  };
+
+  const sil = id => { if (confirm('Silinsin mi?')) setGecmis(p => p.filter(r => r.id !== id)); };
+
+  const csvIndir = () => {
+    const h = '\uFEFFTarih,Ürün,Satış,Maliyet,Reklam,Net Kâr,Marj%\n';
+    const r = gecmis.map(r => `${r.tarih},"${r.urunAdi}",${r.satisFiyati},${r.tedarikFiyati+r.kargoMaliyeti},${r.reklam},${r.netKar.toFixed(2)},${r.marj.toFixed(1)}`).join('\n');
+    const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(h+r);
+    a.download = `yalify-siparisler-${today()}.csv`; a.click();
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="card">
+        <p className="text-sm font-bold text-slate-700 mb-4">📦 Yeni Sipariş Girişi</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Tarih"><input type="date" value={f.tarih} onChange={s('tarih')} className="inp" /></Field>
+          <div className="sm:col-span-1">
+            <Field label="Ürün Adı *"><input type="text" value={f.urunAdi} onChange={s('urunAdi')} className="inp" placeholder="Ürün adı..." /></Field>
+          </div>
+          <MoneyInp label="Satış Fiyatı ($)" value={f.satisFiyati} onChange={s('satisFiyati')} />
+          <MoneyInp label="Tedarik Fiyatı ($)" value={f.tedarikFiyati} onChange={s('tedarikFiyati')} />
+          <MoneyInp label="Kargo Maliyeti ($)" value={f.kargoMaliyeti} onChange={s('kargoMaliyeti')} />
+          <MoneyInp label="Reklam Harcaması ($)" value={f.reklam} onChange={s('reklam')} />
+          <MoneyInp label="Shopify TX ($)" value={f.shopifyTx} onChange={s('shopifyTx')} hint={`Otomatik: $${$$(shop)}`} />
+          <MoneyInp label="Authorize.net ($)" value={f.authNet} onChange={s('authNet')} hint={`Otomatik: $${$$(auth)}`} />
+        </div>
+        {sF > 0 && (
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="bg-slate-50 rounded-xl p-3 text-center"><p className="text-xs text-slate-400 font-bold">Toplam Maliyet</p><p className="text-lg font-black text-slate-700">${$$(topMaliyet)}</p></div>
+            <div className={`rounded-xl p-3 text-center ${netKar >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}><p className={`text-xs font-bold ${netKar >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>Net Kâr</p><p className={`text-lg font-black ${netKar >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>{netKar >= 0 ? '+' : ''}{$$(netKar)}</p></div>
+            <div className={`rounded-xl p-3 text-center ${marj > 20 ? 'bg-indigo-50' : 'bg-amber-50'}`}><p className="text-xs text-indigo-500 font-bold">Marj</p><p className={`text-lg font-black ${marj > 20 ? 'text-indigo-700' : 'text-amber-700'}`}>{$$(marj,1)}%</p></div>
+          </div>
+        )}
+        <button onClick={ekle} className="btn-primary mt-4">+ Sipariş Ekle</button>
+      </div>
+
+      {gecmis.length > 0 && (
+        <div className="card overflow-x-auto">
+          <div className="flex justify-between items-center mb-3">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Sipariş Geçmişi ({gecmis.length})</p>
+            <button onClick={csvIndir} className="btn-secondary text-xs">📥 CSV İndir</button>
+          </div>
+          <table className="tbl w-full">
+            <thead><tr><th>Tarih</th><th>Ürün</th><th className="text-right">Satış</th><th className="text-right">Reklam</th><th className="text-right">Net Kâr</th><th className="text-right">Marj</th><th></th></tr></thead>
+            <tbody>
+              {gecmis.map(r => (
+                <tr key={r.id}>
+                  <td className="text-slate-500">{fmtDate(r.tarih)}</td>
+                  <td className="font-semibold">{r.urunAdi}</td>
+                  <td className="text-right">${$$(r.satisFiyati)}</td>
+                  <td className="text-right text-purple-600">{r.reklam > 0 ? `$${$$(r.reklam)}` : '—'}</td>
+                  <td className={`text-right font-bold ${r.netKar >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{r.netKar >= 0 ? '+' : ''}{$$(r.netKar)}</td>
+                  <td className={`text-right text-sm ${r.marj > 20 ? 'text-indigo-600' : 'text-amber-600'}`}>{$$(r.marj,1)}%</td>
+                  <td><button onClick={() => sil(r.id)} className="text-red-400 hover:text-red-600 text-lg px-1">×</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════
+   TAB 4: ANALİTİK
+═══════════════════════════════════ */
+function LineChart({ data, color, height = 100 }) {
+  if (!data || data.length < 2) return <div className="flex items-center justify-center text-slate-300 text-sm" style={{ height }}>Yeterli veri yok</div>;
+  const minY = Math.min(...data.map(d => d.y));
+  const maxY = Math.max(...data.map(d => d.y));
+  const rangeY = maxY - minY || 1;
+  const w = 400, h = height;
+  const pts = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((d.y - minY) / rangeY) * (h * 0.8) - h * 0.1;
+    return `${x},${y}`;
+  }).join(' ');
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height }}>
+      <polyline fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" points={pts} />
+    </svg>
+  );
+}
+
+function Analitik({ gecmis, urunler }) {
+  const istat = useMemo(() => {
+    if (!gecmis.length) return null;
+    const sira = [...gecmis].sort((a, b) => a.tarih > b.tarih ? 1 : -1);
+    let cum = 0;
+    const cumLine = sira.map((r, i) => { cum += r.netKar; return { x: i, y: cum }; });
+    const karLine = sira.map((r, i) => ({ x: i, y: r.netKar }));
+    const topla = key => gecmis.reduce((s, r) => s + (r[key] || 0), 0);
+    return { kar: topla('netKar'), rek: topla('reklam'), avg: topla('marj') / gecmis.length, cumLine, karLine, enKarli: [...gecmis].sort((a, b) => b.netKar - a.netKar).slice(0, 5) };
+  }, [gecmis]);
+
+  if (!gecmis.length && !urunler.length) return (
+    <div className="card text-center py-16 text-slate-400">
+      <p className="text-5xl mb-3">📊</p><p className="font-semibold">Henüz veri yok</p>
+    </div>
+  );
+
+  return (
+    <div className="space-y-5">
+      {istat && (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <KPI label="Toplam Kâr"    value={`$${$$(istat.kar)}`}    color={istat.kar >= 0 ? 'green' : 'red'} icon="💰" />
+            <KPI label="Toplam Reklam" value={`$${$$(istat.rek)}`}    color="purple" icon="📢" />
+            <KPI label="Ort. Marj"     value={`${$$(istat.avg,1)}%`}  color="amber"  icon="🎯" />
+            <KPI label="Toplam Sipariş" value={gecmis.length}          color="sky"    icon="📦" />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="card"><p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">📈 Kâr Trendi</p><LineChart data={istat.karLine} color="#6366f1" height={100} /></div>
+            <div className="card"><p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">📊 Kümülatif Kâr</p><LineChart data={istat.cumLine} color="#10b981" height={100} /></div>
+          </div>
+        </>
+      )}
+      {urunler.length > 0 && (
+        <div className="card">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">🗂️ Ürün Durum Dağılımı</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[{id:'arastirma',icon:'🔍',label:'Araştırma',color:'text-blue-600'},{id:'test',icon:'🧪',label:'Test',color:'text-amber-600'},{id:'kazaniyor',icon:'✅',label:'Kazanıyor',color:'text-emerald-600'},{id:'reddedildi',icon:'❌',label:'Reddedildi',color:'text-red-500'}].map(d => (
+              <div key={d.id} className="card text-center py-3">
+                <p className="text-3xl">{d.icon}</p>
+                <p className={`text-2xl font-black mt-1 ${d.color}`}>{urunler.filter(u => u.durum === d.id).length}</p>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">{d.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════
+   TAB 5: BÜTÇE & TASARRUF
+═══════════════════════════════════ */
+const TASARRUF_PCT = 20;
+function ButceTasarruf({ budgets, setBudgets }) {
+  const bos = { tarih: today(), gunlukKar: '', reklamHarcama: '', urunHarcama: '', notlar: '' };
+  const [f, setF] = useState({ ...bos });
+  const s = k => e => setF(p => ({ ...p, [k]: e.target.value }));
+  const gKar=n(f.gunlukKar), tasrrf=gKar*(TASARRUF_PCT/100), kullan=gKar-tasrrf, rek=n(f.reklamHarcama), urun=n(f.urunHarcama), kalan=kullan-rek-urun;
+
+  const kaydet = () => {
+    if (gKar <= 0) return alert('Günlük kâr giriniz');
+    setBudgets(p => [{ id:uid(), tarih:f.tarih||today(), gunlukKar:gKar, tasarruf:tasrrf, kullanilabilir:kullan, reklamHarcama:rek, urunHarcama:urun, kalan, notlar:f.notlar }, ...p]);
+    setF({ ...bos });
+  };
+  const sil = id => { if (confirm('Silinsin mi?')) setBudgets(p => p.filter(r => r.id !== id)); };
+
+  const now = new Date();
+  const sw = new Date(now); sw.setDate(now.getDate()-now.getDay()); sw.setHours(0,0,0,0);
+  const sm = new Date(now.getFullYear(), now.getMonth(), 1);
+  const topla = (arr, key) => arr.reduce((s,r) => s+(r[key]||0), 0);
+  const hafta = budgets.filter(r => new Date(r.tarih) >= sw);
+  const ay = budgets.filter(r => new Date(r.tarih) >= sm);
+  const oz = { topTasarruf: topla(budgets,'tasarruf'), hftTasarruf: topla(hafta,'tasarruf'), ayTasarruf: topla(ay,'tasarruf'), topReklam: topla(budgets,'reklamHarcama'), topUrun: topla(budgets,'urunHarcama'), topKalan: topla(budgets,'kalan') };
+
+  return (
+    <div className="space-y-5">
+      <div className="card">
+        <p className="text-sm font-bold text-slate-700 mb-4">💾 Günlük Kâr Kaydı</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Tarih"><input type="date" value={f.tarih} onChange={s('tarih')} className="inp" /></Field>
+          <MoneyInp label="Günlük Net Kâr ($)" value={f.gunlukKar} onChange={s('gunlukKar')} />
+        </div>
+        {gKar > 0 && (
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center"><p className="text-xs font-bold text-emerald-600 uppercase tracking-wider">%20 Tasarruf</p><p className="text-xl font-black text-emerald-700 mt-0.5">${$$(tasrrf)}</p></div>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-center"><p className="text-xs font-bold text-blue-600 uppercase tracking-wider">%80 Bütçe</p><p className="text-xl font-black text-blue-700 mt-0.5">${$$(kullan)}</p></div>
+            <div className={`border rounded-xl p-3 text-center ${kalan>=0?'bg-indigo-50 border-indigo-200':'bg-red-50 border-red-200'}`}><p className={`text-xs font-bold uppercase tracking-wider ${kalan>=0?'text-indigo-600':'text-red-600'}`}>Kalan</p><p className={`text-xl font-black mt-0.5 ${kalan>=0?'text-indigo-700':'text-red-600'}`}>${$$(kalan)}</p></div>
+          </div>
+        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <MoneyInp label="Reklam Harcaması (Meta)" value={f.reklamHarcama} onChange={s('reklamHarcama')} />
+          <MoneyInp label="Ürün / Tedarik Harcaması" value={f.urunHarcama} onChange={s('urunHarcama')} />
+        </div>
+        <div className="mt-4"><Field label="Not"><textarea value={f.notlar} onChange={s('notlar')} rows={2} className="inp resize-none" placeholder="Not..." /></Field></div>
+        <button onClick={kaydet} className="btn-primary mt-4">💾 Kaydet</button>
+      </div>
+      {budgets.length > 0 && (
+        <>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <KPI label="Toplam Tasarruf" value={`$${$$(oz.topTasarruf)}`} color="green" icon="🏦" sub={`Bu hafta: $${$$(oz.hftTasarruf)}`} />
+            <KPI label="Bu Ay Tasarruf"  value={`$${$$(oz.ayTasarruf)}`}  color="sky"   icon="📅" />
+            <KPI label="Kalan Bütçe"     value={`$${$$(oz.topKalan)}`}    color={oz.topKalan>=0?'indigo':'red'} icon="💼" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <KPI label="Toplam Reklam"      value={`$${$$(oz.topReklam)}`} color="purple" icon="📢" />
+            <KPI label="Toplam Ürün/Tedarik" value={`$${$$(oz.topUrun)}`}  color="amber"  icon="📦" />
+          </div>
+          <div className="card overflow-x-auto">
+            <table className="tbl w-full">
+              <thead><tr><th>Tarih</th><th>Net Kâr</th><th>%20 Tasarruf</th><th>Reklam</th><th>Ürün</th><th>Kalan</th><th>Not</th><th></th></tr></thead>
+              <tbody>
+                {budgets.map(r => (
+                  <tr key={r.id}>
+                    <td className="font-semibold text-slate-600">{fmtDate(r.tarih)}</td>
+                    <td className="font-bold">${$$(r.gunlukKar)}</td>
+                    <td className="text-emerald-600 font-bold">${$$(r.tasarruf)}</td>
+                    <td className="text-purple-600">{r.reklamHarcama>0?`$${$$(r.reklamHarcama)}`:'—'}</td>
+                    <td className="text-amber-600">{r.urunHarcama>0?`$${$$(r.urunHarcama)}`:'—'}</td>
+                    <td className={`font-bold ${r.kalan>=0?'text-indigo-600':'text-red-500'}`}>${$$(r.kalan)}</td>
+                    <td className="text-slate-400 text-xs max-w-xs truncate">{r.notlar||'—'}</td>
+                    <td><button onClick={()=>sil(r.id)} className="text-red-400 hover:text-red-600 text-lg px-1">×</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+      {budgets.length === 0 && <div className="card text-center py-14 text-slate-400"><p className="text-5xl mb-3">🏦</p><p className="font-semibold">Henüz kayıt yok</p></div>}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════
+   TAB 6: KEYWORD HAVUZU (inline)
+═══════════════════════════════════ */
+const ADS_KEYWORDS = [
+  { kategori:'💰 İndirim & Fiyat', renk:'bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100', etiket:'bg-emerald-100 text-emerald-700', kelimeler:['10% off','15% off','20% off','25% off','30% off','40% off','50% off','60% off','70% off','80% off','save 10%','save 20%','save 30%','save 40%','save 50%','save %','half price','huge discount','massive sale','clearance sale','flash sale','best price','lowest price','price drop','sale price','special offer','exclusive deal','bundle deal','on sale'] },
+  { kategori:'⏰ Aciliyet & Kıtlık', renk:'bg-red-50 border-red-200 text-red-800 hover:bg-red-100', etiket:'bg-red-100 text-red-700', kelimeler:['limited time','limited stock','ends soon','ending soon','today only','last chance','hurry up','almost gone','while supplies last','selling fast','going fast','dont miss out','offer ends','sale ends','24 hours only','expires soon','final hours','nearly sold out','low stock','high demand','act fast','only a few left'] },
+  { kategori:'👆 Harekete Geçirme', renk:'bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100', etiket:'bg-blue-100 text-blue-700', kelimeler:['shop now','order now','buy now','get yours','grab yours','grab it','get it','buy it','try it','order today','order yours','click the link','link below','get one','claim yours','start now','act now','try now','add to cart','check it out','discover now','link in bio','swipe up','tap to order'] },
+  { kategori:'🎁 Teklif & Promosyon', renk:'bg-purple-50 border-purple-200 text-purple-800 hover:bg-purple-100', etiket:'bg-purple-100 text-purple-700', kelimeler:['buy 1 get 1 free','buy 2 get 1 free','buy 2 get 2 free','buy 3 get 1 free','bogo','free shipping','worldwide shipping','fast shipping','free gift','free bonus','bundle offer','pack deal','combo deal','value pack','money back','30 day guarantee','60 day guarantee','risk free','satisfaction guaranteed','lifetime warranty','free returns','free delivery','introducing the'] },
+  { kategori:'⭐ Sosyal Kanıt', renk:'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100', etiket:'bg-amber-100 text-amber-700', kelimeler:['4.9/5','5/5','5 star','trusted by','happy customers','satisfied customers','reviews','over 10,000 customers','50,000+ sold','100,000+ sold','thousands sold','#1 best seller','best selling','top rated','award winning','as seen on','viral product','trending now','obsessed','verified reviews','real results','proven by customers'] },
+  { kategori:'✨ Dönüşüm & Fayda', renk:'bg-indigo-50 border-indigo-200 text-indigo-800 hover:bg-indigo-100', etiket:'bg-indigo-100 text-indigo-700', kelimeler:['say goodbye','no more','reduce','improve','alleviate','enhance','increase','relieve','relief','transform','life changing','game changer','must have','works instantly','results in days','proven results','clinically proven','eco friendly','sustainable','natural','organic','pain free','stress free','effortless','easy to use'] },
+  { kategori:'📦 Stok & Durum', renk:'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100', etiket:'bg-slate-100 text-slate-600', kelimeler:['in stock','out of stock','sold out','almost sold out','back in stock','new arrival','just launched','brand new','limited edition','exclusive','only available here','not in stores','available online only','online exclusive','first 100 orders','restocked','trending item'] },
+  { kategori:'🌍 Pazar & Hedef', renk:'bg-sky-50 border-sky-200 text-sky-800 hover:bg-sky-100', etiket:'bg-sky-100 text-sky-700', kelimeler:['USA','UK','Canada','Australia','worldwide','international shipping','for men','for women','for moms','for pet owners','for dog owners','for cat lovers','for gym lovers','for coffee lovers','perfect gift','gift for him','gift for her','birthday gift','christmas gift','mother\'s day','father\'s day','holiday gift','gift set'] },
+  { kategori:'🔥 Viral & Trend', renk:'bg-rose-50 border-rose-200 text-rose-800 hover:bg-rose-100', etiket:'bg-rose-100 text-rose-700', kelimeler:['everyone is talking about','gone viral','tiktok made me buy it','as seen on tiktok','instagram famous','trending 2025','everyone needs this','mind blowing','shocked by the results','this actually works','honest review','worth the hype','does it actually work','testing the viral','you\'ve seen this everywhere'] },
+];
+
+function AdsKeywords() {
+  const [kopyalandi, setKopyalandi] = useState(null);
+  const [ara, setAra] = useState('');
+  const [aktifKat, setAktifKat] = useState('hepsi');
+  const kopyala = kw => {
+    navigator.clipboard.writeText(kw).catch(() => { const el = document.createElement('textarea'); el.value=kw; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); });
+    setKopyalandi(kw); setTimeout(() => setKopyalandi(null), 1800);
+  };
+  const aramaLower = ara.toLowerCase();
+  const filtrelenmis = ADS_KEYWORDS.filter(k => aktifKat==='hepsi'||k.kategori===aktifKat).map(k => ({ ...k, kelimeler: ara ? k.kelimeler.filter(w => w.toLowerCase().includes(aramaLower)) : k.kelimeler })).filter(k => k.kelimeler.length > 0);
+  const toplam = ADS_KEYWORDS.reduce((s,k) => s+k.kelimeler.length, 0);
+  const gorunen = filtrelenmis.reduce((s,k) => s+k.kelimeler.length, 0);
+
+  return (
+    <div className="space-y-5">
+      {kopyalandi && <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-slate-800 text-white text-sm font-semibold px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2"><span>✅</span><span>Kopyalandı: <span className="text-indigo-300">"{kopyalandi}"</span></span></div>}
+      <div className="card">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+          <div className="flex-1"><h2 className="font-black text-slate-800 text-base">🔍 Meta Ads Library — Keyword Bankası</h2><p className="text-xs text-slate-400 mt-0.5">{toplam} keyword · Görünen: <strong>{gorunen}</strong> · Tıkla kopyala</p></div>
+        </div>
+        <input type="text" value={ara} onChange={e => setAra(e.target.value)} placeholder="🔎 Keyword ara..." className="inp" />
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        <button onClick={() => setAktifKat('hepsi')} className={`text-xs font-bold px-3 py-1.5 rounded-full border transition ${aktifKat==='hepsi'?'bg-indigo-600 text-white border-indigo-600':'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`}>Tümü ({toplam})</button>
+        {ADS_KEYWORDS.map(k => (
+          <button key={k.kategori} onClick={() => setAktifKat(aktifKat===k.kategori?'hepsi':k.kategori)} className={`text-xs font-bold px-3 py-1.5 rounded-full border transition ${aktifKat===k.kategori?'bg-indigo-600 text-white border-indigo-600':'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`}>
+            {k.kategori.split(' ').slice(0,2).join(' ')} ({k.kelimeler.length})
+          </button>
+        ))}
+      </div>
+      {filtrelenmis.length === 0 ? <div className="card text-center py-12 text-slate-400"><p className="text-4xl mb-2">🔍</p><p className="font-semibold">Bulunamadı</p></div> :
+        filtrelenmis.map(k => (
+          <div key={k.kategori} className="card">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-black text-slate-700">{k.kategori}</p>
+              <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${k.etiket}`}>{k.kelimeler.length} keyword</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {k.kelimeler.map(kw => (
+                <button key={kw} onClick={() => kopyala(kw)}
+                  className={`border rounded-lg px-3 py-1.5 text-sm font-medium transition cursor-pointer ${kopyalandi===kw?'bg-indigo-600 text-white border-indigo-600 scale-95':k.renk}`}>
+                  {kopyalandi===kw?'✓ Kopyalandı':kw}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))
+      }
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════
+   ANA APP
+═══════════════════════════════════ */
+const TABS = [
+  { id:'urunler',  icon:'📋', label:'Ürün Listesi'    },
+  { id:'basabas',  icon:'⚖️', label:'Başabaş'         },
+  { id:'siparis',  icon:'💰', label:'Sipariş & Kâr'   },
+  { id:'analitik', icon:'📊', label:'Analitik'        },
+  { id:'butce',    icon:'🏦', label:'Bütçe & Tasarruf'},
+  { id:'keywords', icon:'🔑', label:'Ads Keywords'    },
+];
+
+function MainApp({ user, profile, trialInfo, onSignOut }) {
+  const [tab, setTab] = useState('urunler');
+  const userId = user?.id;
+  const [urunler,  setUrunler,  urunlerReady]  = useCloudData('products', userId);
+  const [gecmis,   setGecmis,   gecmisReady]   = useCloudData('orders',   userId);
+  const [budgets,  setBudgets,  budgetsReady]  = useCloudData('budgets',  userId);
+  const ready = urunlerReady && gecmisReady && budgetsReady;
+
+  return (
+    <div className="min-h-screen bg-slate-100">
+      {trialInfo.status === 'trial' && <TrialBanner daysLeft={trialInfo.daysLeft} />}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center gap-3">
+              <div className="bg-indigo-600 text-white w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm">Y</div>
+              <div>
+                <h1 className="text-sm font-black text-slate-800 leading-tight">Yalify</h1>
+                <p className="text-xs text-slate-400 leading-none">Dropshipping Dashboard</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full font-bold hidden sm:block">
+                {urunler.length} ürün · {gecmis.length} sipariş
+              </span>
+              <button onClick={onSignOut} className="text-xs text-slate-400 hover:text-slate-600 transition px-2">Çıkış</button>
+            </div>
+          </div>
+          <div className="flex overflow-x-auto -mb-px">
+            {TABS.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-sm font-bold border-b-2 transition whitespace-nowrap ${tab===t.id?'border-indigo-600 text-indigo-600':'border-transparent text-slate-400 hover:text-slate-600 hover:border-slate-300'}`}>
+                <span>{t.icon}</span><span>{t.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+      <main className="max-w-7xl mx-auto px-4 py-5 pb-10">
+        {!ready ? (
+          <div className="flex items-center justify-center py-20 text-slate-400">
+            <div className="text-center"><div className="w-8 h-8 border-4 border-slate-200 border-t-indigo-500 rounded-full spin mx-auto mb-3" /><p className="text-sm">Veriler yükleniyor...</p></div>
+          </div>
+        ) : (
+          <>
+            {tab==='urunler'  && <UrunListesi   urunler={urunler}   setUrunler={setUrunler} />}
+            {tab==='basabas'  && <BasabasHesaplama />}
+            {tab==='siparis'  && <SiparisTracker gecmis={gecmis}    setGecmis={setGecmis} />}
+            {tab==='analitik' && <Analitik       gecmis={gecmis}    urunler={urunler} />}
+            {tab==='butce'    && <ButceTasarruf  budgets={budgets}   setBudgets={setBudgets} />}
+            {tab==='keywords' && <AdsKeywords />}
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════
+   ROOT APP — AUTH STATE MACHINE
+═══════════════════════════════════ */
+function App() {
+  const [authState, setAuthState] = useState('loading');
+  const [user, setUser]     = useState(null);
+  const [profile, setProfile] = useState(null);
+
+  const loadProfile = async (uid, email) => {
+    let { data } = await sb.from('profiles').select('*').eq('id', uid).single();
+    if (!data) {
+      // Trigger çalışmadıysa profili manuel oluştur
+      await sb.from('profiles').insert({ id: uid, email: email || '', trial_started_at: new Date().toISOString(), subscription_status: 'trial' });
+      const res = await sb.from('profiles').select('*').eq('id', uid).single();
+      data = res.data;
+    }
+    setProfile(data);
+  };
+
+  useEffect(() => {
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session) { setUser(session.user); loadProfile(session.user.id, session.user.email); setAuthState('authed'); }
+      else setAuthState('guest');
+    });
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_, session) => {
+      if (session) { setUser(session.user); loadProfile(session.user.id, session.user.email); setAuthState('authed'); }
+      else { setUser(null); setProfile(null); setAuthState('guest'); }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signOut = () => sb.auth.signOut();
+
+  if (authState === 'loading') return <LoadingScreen />;
+  if (authState === 'guest')   return <AuthScreen />;
+
+  const trialInfo = getTrialInfo(profile);
+  if (trialInfo.status === 'expired') return <PaywallScreen user={user} onSignOut={signOut} />;
+
+  return <MainApp user={user} profile={profile} trialInfo={trialInfo} onSignOut={signOut} />;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+  }
+</script>
+</body>
+</html>
