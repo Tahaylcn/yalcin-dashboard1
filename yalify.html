@@ -234,10 +234,11 @@ function AuthScreen() {
     if (pw !== pw2) return setErr('Şifreler eşleşmiyor');
     if (pw.length < 6) return setErr('Şifre en az 6 karakter olmalı');
     setLoading(true);
-    const { error } = await sb.auth.signUp({ email, password: pw });
+    const { data, error } = await sb.auth.signUp({ email, password: pw });
     setLoading(false);
     if (error) setErr(error.message);
-    else { setOk('Kayıt başarılı! Giriş yapılıyor...'); }
+    else if (data.session) { setOk('Kayıt başarılı! Giriş yapılıyor...'); }
+    else { setOk('✅ Kayıt başarılı! E-postana doğrulama maili gönderildi. Maildeki linke tıklayınca otomatik giriş yapacaksın.'); }
   };
 
   return (
