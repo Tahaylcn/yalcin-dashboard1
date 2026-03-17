@@ -1047,14 +1047,18 @@ function App() {
   const [profile, setProfile] = useState(null);
 
   const loadProfile = async (uid, email) => {
-    let { data } = await sb.from('profiles').select('*').eq('id', uid).single();
-    if (!data) {
-      // Trigger çalışmadıysa profili manuel oluştur
-      await sb.from('profiles').insert({ id: uid, email: email || '', trial_started_at: new Date().toISOString(), subscription_status: 'trial' });
-      const res = await sb.from('profiles').select('*').eq('id', uid).single();
-      data = res.data;
+    try {
+      let { data } = await sb.from('profiles').select('*').eq('id', uid).single();
+      if (!data) {
+        await sb.from('profiles').insert({ id: uid, email: email || '', trial_started_at: new Date().toISOString(), subscription_status: 'trial' });
+        const res = await sb.from('profiles').select('*').eq('id', uid).single();
+        data = res.data;
+      }
+      // Profil hâlâ yoksa default kullan
+      setProfile(data || { id: uid, email: email || '', trial_started_at: new Date().toISOString(), subscription_status: 'trial' });
+    } catch(e) {
+      setProfile({ id: uid, email: email || '', trial_started_at: new Date().toISOString(), subscription_status: 'trial' });
     }
-    setProfile(data);
   };
 
   useEffect(() => {
