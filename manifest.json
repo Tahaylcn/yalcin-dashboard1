@@ -1,0 +1,20 @@
+{
+  "name": "YALÇIN 1.0 — Dropshipping Dashboard",
+  "short_name": "YALÇIN 1.0",
+  "description": "Dropshipping ürün takibi, başabaş hesaplama, reklam keyword ve bütçe yönetimi",
+  "start_url": "./yalcin-1.0.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f0f4f8",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "lang": "tr",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    { "src": "icon-72.png",  "sizes": "72x72",   "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-96.png",  "sizes": "96x96",   "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-128.png", "sizes": "128x128", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
