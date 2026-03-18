@@ -1552,7 +1552,7 @@ function App() {
     // Listener'ı getSession'dan ÖNCE kur — PASSWORD_RECOVERY yakalamak için
     const { data: { subscription } } = sb.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') { setAuthStateBoth('recovery'); return; }
-      if (event === 'SIGNED_IN' && authStateRef.current === 'recovery') return;
+      if (authStateRef.current === 'recovery') return;
       if (session) { setUser(session.user); loadProfile(session.user.id, session.user.email); setAuthStateBoth('authed'); }
       else { setUser(null); setProfile(null); setAuthStateBoth('guest'); }
     });
