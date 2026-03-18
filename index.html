@@ -1036,6 +1036,7 @@ function BasabasHesaplama() {
 function SiparisTracker({ gecmis, setGecmis }) {
   const bosForm = { id:'',tarih:today(),urunAdi:'',satisFiyati:'',tedarikFiyati:'',kargoMaliyeti:'',reklam:'',shopifyTx:'',authNet:'',diger:'' };
   const [f, setF] = useState({ ...bosForm });
+  const [editId, setEditId] = useState(null);
   const s = k => e => setF(p => ({ ...p, [k]: e.target.value }));
   const sF=n(f.satisFiyati), tF=n(f.tedarikFiyati), kM=n(f.kargoMaliyeti), rek=n(f.reklam), shop=n(f.shopifyTx)||sF*0.01, auth=n(f.authNet)||(sF*0.029+0.30), dig=n(f.diger);
   const topMaliyet = tF+kM+rek+shop+auth+dig;
@@ -1044,12 +1045,15 @@ function SiparisTracker({ gecmis, setGecmis }) {
 
   const ekle = () => {
     if (!f.urunAdi.trim() || !f.satisFiyati) return alert('Ürün adı ve satış fiyatı giriniz');
-    const kayit = { id:uid(), tarih:f.tarih||today(), urunAdi:f.urunAdi, satisFiyati:sF, tedarikFiyati:tF, kargoMaliyeti:kM, reklam:rek, shopifyTx:shop, authNet:auth, diger:dig, netKar, marj };
-    setGecmis(p => [kayit, ...p]);
+    const kayit = { id: editId || uid(), tarih:f.tarih||today(), urunAdi:f.urunAdi, satisFiyati:sF, tedarikFiyati:tF, kargoMaliyeti:kM, reklam:rek, shopifyTx:shop, authNet:auth, diger:dig, netKar, marj };
+    if (editId) { setGecmis(p => p.map(r => r.id === editId ? kayit : r)); setEditId(null); }
+    else setGecmis(p => [kayit, ...p]);
     setF({ ...bosForm });
   };
 
-  const sil = id => { if (confirm('Silinsin mi?')) setGecmis(p => p.filter(r => r.id !== id)); };
+  const duzenle = r => { setF({ id:r.id, tarih:r.tarih, urunAdi:r.urunAdi, satisFiyati:r.satisFiyati, tedarikFiyati:r.tedarikFiyati, kargoMaliyeti:r.kargoMaliyeti, reklam:r.reklam, shopifyTx:r.shopifyTx, authNet:r.authNet, diger:r.diger||'' }); setEditId(r.id); window.scrollTo({top:0,behavior:'smooth'}); };
+  const iptal = () => { setF({...bosForm}); setEditId(null); };
+  const sil = id => { if (confirm('Silinsin mi?')) { setGecmis(p => p.filter(r => r.id !== id)); if (editId===id) iptal(); } };
 
   const csvIndir = () => {
     const h = '\uFEFFTarih,Ürün,Satış,Maliyet,Reklam,Net Kâr,Marj%\n';
@@ -1061,7 +1065,7 @@ function SiparisTracker({ gecmis, setGecmis }) {
   return (
     <div className="space-y-5">
       <div className="card">
-        <p className="text-sm font-bold text-slate-700 mb-4">📦 Yeni Sipariş Girişi</p>
+        <div className="flex justify-between items-center mb-4"><p className="text-sm font-bold text-slate-700">{editId ? '✏️ Siparişi Düzenle' : '📦 Yeni Sipariş Girişi'}</p>{editId && <button onClick={iptal} className="text-xs text-slate-400 hover:text-slate-600 font-semibold">✕ İptal</button>}</div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Tarih"><input type="date" value={f.tarih} onChange={s('tarih')} className="inp" /></Field>
           <div className="sm:col-span-1">
@@ -1081,7 +1085,7 @@ function SiparisTracker({ gecmis, setGecmis }) {
             <div className={`rounded-xl p-3 text-center ${marj > 20 ? 'bg-indigo-50' : 'bg-amber-50'}`}><p className="text-xs text-indigo-500 font-bold">Marj</p><p className={`text-lg font-black ${marj > 20 ? 'text-indigo-700' : 'text-amber-700'}`}>{$$(marj,1)}%</p></div>
           </div>
         )}
-        <button onClick={ekle} className="btn-primary mt-4">+ Sipariş Ekle</button>
+        <button onClick={ekle} className="btn-primary mt-4">{editId ? '💾 Güncelle' : '+ Sipariş Ekle'}</button>
       </div>
 
       {gecmis.length > 0 && (
@@ -1101,7 +1105,7 @@ function SiparisTracker({ gecmis, setGecmis }) {
                   <td className="text-right text-purple-600">{r.reklam > 0 ? `$${$$(r.reklam)}` : '—'}</td>
                   <td className={`text-right font-bold ${r.netKar >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{r.netKar >= 0 ? '+' : ''}{$$(r.netKar)}</td>
                   <td className={`text-right text-sm ${r.marj > 20 ? 'text-indigo-600' : 'text-amber-600'}`}>{$$(r.marj,1)}%</td>
-                  <td><button onClick={() => sil(r.id)} className="text-red-400 hover:text-red-600 text-lg px-1">×</button></td>
+                  <td className="flex gap-1 items-center"><button onClick={() => duzenle(r)} className="text-indigo-400 hover:text-indigo-600 text-sm px-1" title="Düzenle">✏️</button><button onClick={() => sil(r.id)} className="text-red-400 hover:text-red-600 text-lg px-1" title="Sil">×</button></td>
                 </tr>
               ))}
             </tbody>
@@ -1134,15 +1138,25 @@ function LineChart({ data, color, height = 100 }) {
 }
 
 function Analitik({ gecmis, urunler }) {
+  const [filtre, setFiltre] = useState('all');
+
+  const filtreli = useMemo(() => {
+    if (filtre === 'all') return gecmis;
+    const now = new Date();
+    if (filtre === 'week') { const sw = new Date(now); sw.setDate(now.getDate()-now.getDay()); sw.setHours(0,0,0,0); return gecmis.filter(r => new Date(r.tarih) >= sw); }
+    if (filtre === 'month') { const sm = new Date(now.getFullYear(), now.getMonth(), 1); return gecmis.filter(r => new Date(r.tarih) >= sm); }
+    return gecmis;
+  }, [gecmis, filtre]);
+
   const istat = useMemo(() => {
-    if (!gecmis.length) return null;
-    const sira = [...gecmis].sort((a, b) => a.tarih > b.tarih ? 1 : -1);
+    if (!filtreli.length) return null;
+    const sira = [...filtreli].sort((a, b) => a.tarih > b.tarih ? 1 : -1);
     let cum = 0;
     const cumLine = sira.map((r, i) => { cum += r.netKar; return { x: i, y: cum }; });
     const karLine = sira.map((r, i) => ({ x: i, y: r.netKar }));
-    const topla = key => gecmis.reduce((s, r) => s + (r[key] || 0), 0);
-    return { kar: topla('netKar'), rek: topla('reklam'), avg: topla('marj') / gecmis.length, cumLine, karLine, enKarli: [...gecmis].sort((a, b) => b.netKar - a.netKar).slice(0, 5) };
-  }, [gecmis]);
+    const topla = key => filtreli.reduce((s, r) => s + (r[key] || 0), 0);
+    return { kar: topla('netKar'), rek: topla('reklam'), avg: topla('marj') / filtreli.length, cumLine, karLine, enKarli: [...filtreli].sort((a, b) => b.netKar - a.netKar).slice(0, 5) };
+  }, [filtreli]);
 
   if (!gecmis.length && !urunler.length) return (
     <div className="card text-center py-16 text-slate-400">
@@ -1152,20 +1166,40 @@ function Analitik({ gecmis, urunler }) {
 
   return (
     <div className="space-y-5">
+      <div className="flex gap-2">
+        {[['all','Tüm Zamanlar'],['month','Bu Ay'],['week','Bu Hafta']].map(([k,l]) => (
+          <button key={k} onClick={() => setFiltre(k)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${filtre===k ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-500 border-slate-200 hover:border-indigo-300'}`}>{l}</button>
+        ))}
+      </div>
       {istat && (
         <>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <KPI label="Toplam Kâr"    value={`$${$$(istat.kar)}`}    color={istat.kar >= 0 ? 'green' : 'red'} icon="💰" />
             <KPI label="Toplam Reklam" value={`$${$$(istat.rek)}`}    color="purple" icon="📢" />
             <KPI label="Ort. Marj"     value={`${$$(istat.avg,1)}%`}  color="amber"  icon="🎯" />
-            <KPI label="Toplam Sipariş" value={gecmis.length}          color="sky"    icon="📦" />
+            <KPI label="Toplam Sipariş" value={filtreli.length}        color="sky"    icon="📦" />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div className="card"><p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">📈 Kâr Trendi</p><LineChart data={istat.karLine} color="#6366f1" height={100} /></div>
             <div className="card"><p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">📊 Kümülatif Kâr</p><LineChart data={istat.cumLine} color="#10b981" height={100} /></div>
           </div>
+          <div className="card">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">🏆 En Kârlı 5 Sipariş</p>
+            <div className="space-y-2">
+              {istat.enKarli.map((r, i) => (
+                <div key={r.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                  <div className="flex items-center gap-3">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black ${i===0?'bg-amber-100 text-amber-700':i===1?'bg-slate-100 text-slate-600':i===2?'bg-orange-100 text-orange-600':'bg-slate-50 text-slate-400'}`}>{i+1}</span>
+                    <div><p className="text-sm font-semibold text-slate-700">{r.urunAdi}</p><p className="text-xs text-slate-400">{fmtDate(r.tarih)}</p></div>
+                  </div>
+                  <div className="text-right"><p className={`text-sm font-bold ${r.netKar>=0?'text-emerald-600':'text-red-500'}`}>{r.netKar>=0?'+':''}{$$(r.netKar)}</p><p className="text-xs text-slate-400">{$$(r.marj,1)}% marj</p></div>
+                </div>
+              ))}
+            </div>
+          </div>
         </>
       )}
+      {!istat && gecmis.length > 0 && <div className="card text-center py-10 text-slate-400"><p className="font-semibold">Bu dönemde sipariş yok</p></div>}
       {urunler.length > 0 && (
         <div className="card">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">🗂️ Ürün Durum Dağılımı</p>
