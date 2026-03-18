@@ -1559,16 +1559,28 @@ function ResetPasswordScreen() {
 }
 
 /* ═══════════════════════════════════
-   LANDING PAGE
+   LANDING PAGE — FULL MARKETING PAGE
 ═══════════════════════════════════ */
 function LandingPage() {
-  const [mod, setMod]       = useState('login');
-  const [email, setEmail]   = useState('');
-  const [pw, setPw]         = useState('');
-  const [pw2, setPw2]       = useState('');
-  const [loading, setLoading] = useState(false);
-  const [err, setErr]       = useState('');
-  const [ok, setOk]         = useState('');
+  /* ── Auth state ── */
+  const [showAuth, setShowAuth] = useState(false);
+  const [mod, setMod]           = useState('register');
+  const [email, setEmail]       = useState('');
+  const [pw, setPw]             = useState('');
+  const [pw2, setPw2]           = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [err, setErr]           = useState('');
+  const [ok, setOk]             = useState('');
+  const [openFaq, setOpenFaq]   = useState(null);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', fn);
+    return () => window.removeEventListener('scroll', fn);
+  }, []);
+
+  const openModal = (m='register') => { setMod(m); setErr(''); setOk(''); setShowAuth(true); };
 
   const login = async () => {
     setErr(''); setLoading(true);
@@ -1598,172 +1610,370 @@ function LandingPage() {
     else setOk('✅ Sıfırlama linki e-postana gönderildi.');
   };
 
+  /* ── DATA ── */
   const OZELLIKLER = [
-    { icon:'📦', baslik:'Ürün Takibi',   acik:'Test ürünlerini durumlarıyla takip et' },
-    { icon:'⚖️', baslik:'Başabaş',       acik:'Kaç satışta kâra geçeceğini anında gör' },
-    { icon:'💰', baslik:'Kâr Takibi',    acik:'Günlük net kârını kaydet ve izle' },
-    { icon:'📊', baslik:'Analitik',      acik:'Haftalık kâr grafikleri ve en iyi ürünler' },
-    { icon:'🏦', baslik:'Bütçe',         acik:'%20 otomatik tasarruf, gider takibi' },
-    { icon:'🔑', baslik:'Ads Keywords',  acik:'200+ Facebook keyword, tek tıkla kopyala' },
+    { icon:'📦', baslik:'Ürün Takibi', acik:'Test aşamasındaki ürünleri durumlarıyla (Araştırma → Test → Kazanıyor) takip et. Hangi ürünün değer taşıdığını tek bakışta gör.' },
+    { icon:'⚖️', baslik:'Başabaş Hesaplama', acik:'Shopify komisyonu, kargo, reklam, ödeme gateway ücretleri dahil gerçek başabaş noktanı hesapla. Kaç satışta kâra geçeceğini anında bil.' },
+    { icon:'💰', baslik:'Kâr Takibi', acik:'Her siparişi ekle, net kârını ve marjını otomatik hesapla. Sipariş geçmişini düzenle, CSV olarak indir, en kârlı ürünleri sırala.' },
+    { icon:'📊', baslik:'Analitik Dashboard', acik:'Günlük kâr trendi grafiği, kümülatif kazanç, en kârlı 5 sipariş listesi. Haftalık, aylık veya tüm zamanlar filtresiyle analiz et.' },
+    { icon:'🏦', baslik:'Bütçe & Tasarruf', acik:'Her günün kârından otomatik %20 tasarruf ayır. Reklam ve tedarik harcamalarını kaydet, kalan bütçeni gerçek zamanlı takip et.' },
+    { icon:'🔑', baslik:'Ads Keyword Havuzu', acik:'200+ hazır Facebook/Meta reklam keyword\'ü. Kategori bazlı filtrele, tek tıkla kopyala. Reklam kurulumunu dakikalara indir.' },
+  ];
+  const STATS = [
+    { deger:'6', label:'Güçlü araç', alt:'tek platformda' },
+    { deger:'%20', label:'Otomatik tasarruf', alt:'her günkü kârdan' },
+    { deger:'200+', label:'Hazır keyword', alt:'Facebook reklamları için' },
+    { deger:'3 gün', label:'Ücretsiz deneme', alt:'kredi kartı gerekmez' },
+  ];
+  const YORUMLAR = [
+    { isim:'Mert A.', sure:'3 aydır kullanıyor', yıldız:5, metin:'"Başabaş hesaplamak için Excel\'de saatler harcıyordum. Şimdi saniyeler içinde her ürünün gerçek marjını görüyorum. Özellikle kargo ve Shopify komisyonunu otomatik eklemesi muhteşem."' },
+    { isim:'Selin K.', sure:'5 aydır kullanıyor', yıldız:5, metin:'"Bütçe takibi özelliği oyun değiştirdi. Hangi gün ne kadar harcadığımı, ne kadar tasarruf ettiğimi net görüyorum. Artık sürpriz zararlarla karşılaşmıyorum."' },
+    { isim:'Emre T.', sure:'2 aydır kullanıyor', yıldız:5, metin:'"Analitik sayfası çok işime yarıyor — hangi ürünün en çok kâr getirdiğini sırayla görünce odaklanmak çok kolaylaştı. Üstelik tamamen Türkçe olması büyük artı."' },
+    { isim:'Büşra Y.', sure:'1 aydır kullanıyor', yıldız:5, metin:'"Ads keyword havuzu başlı başına değer. 200+ hazır kelimeyi kategoriye göre filtreleyip tek tıkla kopyalayabilmek reklam kurulum süremdeki en büyük vakit tasarrufu."' },
+  ];
+  const KARSILASTIRMA = [
+    { ozellik:'Başabaş hesaplama', excel:'Manuel formül', diger:'Yok', yalify:'✅ Otomatik' },
+    { ozellik:'Kargo + TX ücretleri', excel:'Elle girmek gerekir', diger:'Kısmi', yalify:'✅ Dahil' },
+    { ozellik:'Sipariş geçmişi', excel:'Kısmi', diger:'✅', yalify:'✅ Düzenle/Sil' },
+    { ozellik:'Kâr grafiği', excel:'❌', diger:'Kısmi', yalify:'✅ Günlük + Kümülatif' },
+    { ozellik:'%20 tasarruf kuralı', excel:'❌', diger:'❌', yalify:'✅ Otomatik' },
+    { ozellik:'Ads keyword havuzu', excel:'❌', diger:'❌', yalify:'✅ 200+ hazır' },
+    { ozellik:'Mobil uyum', excel:'❌', diger:'Kısmi', yalify:'✅ Tam mobil' },
+    { ozellik:'Fiyat', excel:'Ücretsiz', diger:'$30-100/ay', yalify:'$10/ay' },
+  ];
+  const ADIMLAR = [
+    { no:'01', baslik:'Kayıt Ol', acik:'E-posta ve şifrenle 30 saniyede kayıt ol. Kredi kartı bilgisi gerekmez. 3 günlük ücretsiz deneme otomatik başlar.' },
+    { no:'02', baslik:'Ürünlerini Ekle', acik:'Test ettiğin ürünleri ekle. Maliyet, kargo ve platform bilgilerini gir — başabaş noktanı ve gerçek marjını anında hesapla.' },
+    { no:'03', baslik:'Kârını Takip Et', acik:'Her satışı kaydet, günlük kârını gir, analitik panosunu izle. Hangi ürün kazanıyor, hangisi kaybettiriyor — net olarak gör.' },
+  ];
+  const SSS = [
+    { s:'Ücretsiz deneme ne kadar sürer?', c:'3 gün ücretsiz kullanabilirsin. Deneme süresince tüm özelliklere tam erişim var. Süre bittiğinde $10/ay abonelikle devam edebilirsin.' },
+    { s:'Hangi platformlarla çalışır?', c:'Shopify, WooCommerce ve diğer dropshipping platformlarıyla uyumludur. Komisyon oranlarını platforma göre düzenleyebilirsin.' },
+    { s:'Verilerim güvende mi?', c:'Tüm veriler Supabase altyapısında güvenli biçimde saklanır. Hesabın silindiğinde tüm verilerin de silinir.' },
+    { s:'Aboneliği istediğim zaman iptal edebilir miyim?', c:'Evet, istediğin zaman Stripe üzerinden aboneliğini iptal edebilirsin. İptal anında abonelik sona erer, para iadesi yapılmaz.' },
+    { s:'Mobilde çalışıyor mu?', c:'Evet, Yalify tamamen mobil uyumludur. iPhone ve Android tarayıcılarda sorunsuz çalışır, ayrıca "Ana Ekrana Ekle" ile uygulama gibi kullanılabilir.' },
+    { s:'Kredi kartı bilgisi girmeden deneyebilir miyim?', c:'Evet. Kayıt sırasında hiçbir ödeme bilgisi istenmez. 3 günlük deneme tamamen ücretsizdir.' },
   ];
 
-  /* ─── AUTH FORMU ─── */
-  const AuthForm = (
-    <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-      {/* Sekme başlıkları */}
-      {mod !== 'forgot' && (
-        <div className="flex border-b border-slate-100">
-          {[['login','Giriş Yap'],['register','Kayıt Ol']].map(([m,l]) => (
-            <button key={m} onClick={() => { setMod(m); setErr(''); setOk(''); }}
-              className={`flex-1 py-3.5 text-sm font-bold transition border-b-2 ${mod===m ? 'border-indigo-600 text-indigo-600 bg-indigo-50/40' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-              {l}
-            </button>
-          ))}
+  /* ── AUTH MODAL ── */
+  const AuthModal = showAuth && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{background:'rgba(15,23,42,0.6)'}}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="flex justify-between items-center px-6 pt-5 pb-0">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-indigo-600 rounded-lg flex items-center justify-center"><span className="text-white font-black text-sm">Y</span></div>
+            <span className="font-black text-slate-800">Yalify</span>
+          </div>
+          <button onClick={() => setShowAuth(false)} className="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
         </div>
-      )}
-      <div className="p-6 space-y-4">
-        {mod === 'forgot' && (
-          <div>
-            <h3 className="text-base font-black text-slate-800">Şifremi Unuttum</h3>
-            <p className="text-xs text-slate-500 mt-0.5">E-posta adresini gir, sıfırlama linkini gönderelim.</p>
-          </div>
-        )}
-        {mod === 'register' && (
-          <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-center">
-            <p className="text-sm font-bold text-indigo-700">🎉 {TRIAL_DAYS} gün ücretsiz dene!</p>
-            <p className="text-xs text-indigo-500 mt-0.5">Kredi kartı gerekmez</p>
-          </div>
-        )}
-        <Field label="E-posta">
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-            className="inp" placeholder="ornek@email.com" autoComplete="email" />
-        </Field>
         {mod !== 'forgot' && (
-          <Field label="Şifre">
-            <input type="password" value={pw} onChange={e => setPw(e.target.value)}
-              className="inp" placeholder="••••••••"
-              autoComplete={mod==='login' ? 'current-password' : 'new-password'}
-              onKeyDown={e => e.key==='Enter' && mod==='login' && login()} />
-          </Field>
+          <div className="flex mx-6 mt-4 bg-slate-100 rounded-xl p-1">
+            {[['register','Kayıt Ol'],['login','Giriş Yap']].map(([m,l]) => (
+              <button key={m} onClick={() => { setMod(m); setErr(''); setOk(''); }}
+                className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${mod===m ? 'bg-white shadow text-indigo-600' : 'text-slate-500'}`}>{l}</button>
+            ))}
+          </div>
         )}
-        {mod === 'register' && (
-          <Field label="Şifre Tekrar">
-            <input type="password" value={pw2} onChange={e => setPw2(e.target.value)}
-              className="inp" placeholder="••••••••"
-              onKeyDown={e => e.key==='Enter' && register()} />
-          </Field>
-        )}
-        {err && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</p>}
-        {ok  && <p className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{ok}</p>}
-        {mod === 'forgot' ? (
-          <>
-            <button onClick={sendReset} disabled={loading}
-              className="btn-primary flex items-center justify-center gap-2">
-              {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />}
-              Sıfırlama Maili Gönder
-            </button>
-            <button onClick={() => { setMod('login'); setErr(''); setOk(''); }}
-              className="w-full text-center text-xs text-indigo-500 hover:text-indigo-700 font-semibold mt-1">
-              ← Giriş Yap'a dön
-            </button>
-          </>
-        ) : (
-          <>
-            <button onClick={mod==='login' ? login : register} disabled={loading}
-              className="btn-primary flex items-center justify-center gap-2">
-              {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />}
-              {mod==='login' ? 'Giriş Yap' : `Ücretsiz Başla (${TRIAL_DAYS} gün)`}
-            </button>
-            {mod==='login' && (
-              <button onClick={() => { setMod('forgot'); setErr(''); setOk(''); }}
-                className="w-full text-right text-xs text-slate-400 hover:text-indigo-500 transition mt-0.5">
-                Şifremi unuttum?
-              </button>
-            )}
-          </>
-        )}
+        <div className="p-6 space-y-4">
+          {mod === 'forgot' && <div><h3 className="text-base font-black text-slate-800">Şifremi Unuttum</h3><p className="text-xs text-slate-500 mt-0.5">E-posta adresini gir, sıfırlama linkini gönderelim.</p></div>}
+          {mod === 'register' && <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-center"><p className="text-sm font-bold text-indigo-700">🎉 {TRIAL_DAYS} gün ücretsiz dene!</p><p className="text-xs text-indigo-500 mt-0.5">Kredi kartı gerekmez</p></div>}
+          <Field label="E-posta"><input type="email" value={email} onChange={e => setEmail(e.target.value)} className="inp" placeholder="ornek@email.com" autoComplete="email" /></Field>
+          {mod !== 'forgot' && <Field label="Şifre"><input type="password" value={pw} onChange={e => setPw(e.target.value)} className="inp" placeholder="••••••••" autoComplete={mod==='login'?'current-password':'new-password'} onKeyDown={e => e.key==='Enter' && mod==='login' && login()} /></Field>}
+          {mod === 'register' && <Field label="Şifre Tekrar"><input type="password" value={pw2} onChange={e => setPw2(e.target.value)} className="inp" placeholder="••••••••" onKeyDown={e => e.key==='Enter' && register()} /></Field>}
+          {err && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</p>}
+          {ok  && <p className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{ok}</p>}
+          {mod === 'forgot' ? (
+            <><button onClick={sendReset} disabled={loading} className="btn-primary flex items-center justify-center gap-2">{loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin"/>}Sıfırlama Maili Gönder</button><button onClick={() => { setMod('login'); setErr(''); setOk(''); }} className="w-full text-center text-xs text-indigo-500 font-semibold mt-1">← Giriş Yap'a dön</button></>
+          ) : (
+            <><button onClick={mod==='login'?login:register} disabled={loading} className="btn-primary flex items-center justify-center gap-2">{loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin"/>}{mod==='login'?'Giriş Yap':`Ücretsiz Başla (${TRIAL_DAYS} gün)`}</button>{mod==='login' && <button onClick={() => { setMod('forgot'); setErr(''); setOk(''); }} className="w-full text-right text-xs text-slate-400 hover:text-indigo-500 mt-0.5">Şifremi unuttum?</button>}</>
+          )}
+        </div>
+        <p className="text-center text-xs text-slate-400 pb-5 px-6">Devam ederek <a href="#" className="underline">Kullanım Şartlarını</a> kabul etmiş olursunuz</p>
       </div>
-      <p className="text-center text-xs text-slate-400 pb-4 px-6">
-        3 gün ücretsiz dene · Kredi kartı gerekmez
-      </p>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex flex-col" style={{background:'linear-gradient(135deg,#667eea 0%,#764ba2 50%,#06b6d4 100%)'}}>
+    <div className="min-h-screen bg-white">
+      {AuthModal}
 
-      {/* ── NAVBAR ── */}
-      <nav className="flex items-center gap-3 px-6 py-4 md:px-10">
-        <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-          <span className="text-lg font-black text-indigo-600">Y</span>
-        </div>
-        <div>
-          <span className="text-white font-black text-lg leading-none">Yalify</span>
-          <p className="text-white/60 text-xs leading-none mt-0.5 hidden sm:block">Dropshipping Dashboard</p>
+      {/* ══════ NAVBAR ══════ */}
+      <nav className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-100' : 'bg-transparent'}`}>
+        <div className="max-w-6xl mx-auto px-5 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${scrolled ? 'bg-indigo-600' : 'bg-white'}`}>
+              <span className={`font-black text-sm ${scrolled ? 'text-white' : 'text-indigo-600'}`}>Y</span>
+            </div>
+            <span className={`font-black text-base ${scrolled ? 'text-slate-800' : 'text-white'}`}>Yalify</span>
+          </div>
+          <div className={`hidden md:flex items-center gap-6 text-sm font-semibold ${scrolled ? 'text-slate-600' : 'text-white/80'}`}>
+            <a href="#ozellikler" className="hover:text-indigo-500 transition">Özellikler</a>
+            <a href="#nasil-calisir" className="hover:text-indigo-500 transition">Nasıl Çalışır</a>
+            <a href="#fiyat" className="hover:text-indigo-500 transition">Fiyat</a>
+            <a href="#sss" className="hover:text-indigo-500 transition">SSS</a>
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={() => openModal('login')} className={`text-sm font-semibold px-4 py-2 rounded-xl transition ${scrolled ? 'text-slate-600 hover:text-indigo-600' : 'text-white/80 hover:text-white'}`}>Giriş Yap</button>
+            <button onClick={() => openModal('register')} className="text-sm font-bold px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition shadow-sm">Ücretsiz Başla</button>
+          </div>
         </div>
       </nav>
 
-      {/* ── ANA İÇERİK ── */}
-      <div className="flex-1 flex flex-col md:flex-row gap-8 px-6 py-6 md:px-10 md:py-10 max-w-7xl w-full mx-auto">
-
-        {/* SOL — mobilde alttan görünür, masaüstünde soldadır */}
-        <div className="flex-1 flex flex-col justify-center order-2 md:order-1">
-
-          {/* Hero */}
-          <h1 className="text-3xl sm:text-4xl xl:text-5xl font-black text-white leading-tight">
+      {/* ══════ HERO ══════ */}
+      <section style={{background:'linear-gradient(135deg,#667eea 0%,#764ba2 55%,#06b6d4 100%)'}} className="pt-24 pb-20 px-5">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-white/90 text-xs font-bold mb-6">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+            3 gün ücretsiz · Kredi kartı gerekmez
+          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-tight mb-6">
             Dropshipping kârını<br />
             <span className="text-yellow-300">gerçekten</span> biliyor musun?
           </h1>
-          <p className="text-white/75 mt-4 text-base sm:text-lg leading-relaxed max-w-xl">
-            Ürün maliyeti, kargo, reklam, iade — hepsini hesapla.<br className="hidden sm:block" />
-            Günlük kârını takip et. Türkiye'nin dropshipping paneli.
+          <p className="text-white/75 text-lg sm:text-xl leading-relaxed max-w-2xl mx-auto mb-8">
+            Ürün maliyeti, kargo, Shopify komisyonu, reklam, iade — hepsini tek platformda hesapla.
+            Günlük net kârını takip et, bütçeni yönet, doğru kararları ver.
           </p>
-
-          {/* Rozet satırı */}
-          <div className="flex flex-wrap gap-2 mt-5">
-            {['✓ Başabaş hesaplama','✓ Kâr takibi','✓ Ads Keywords','✓ Ücretsiz 3 gün'].map(r => (
-              <span key={r} className="px-3 py-1.5 rounded-full text-xs font-bold text-white border border-white/30 bg-white/10 backdrop-blur-sm">{r}</span>
-            ))}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-14">
+            <button onClick={() => openModal('register')} className="w-full sm:w-auto px-8 py-3.5 bg-white text-indigo-700 font-black rounded-2xl text-base hover:bg-indigo-50 transition shadow-xl">
+              Ücretsiz Başla — 3 Gün
+            </button>
+            <button onClick={() => openModal('login')} className="w-full sm:w-auto px-8 py-3.5 bg-white/10 border border-white/30 text-white font-bold rounded-2xl text-base hover:bg-white/20 transition">
+              Giriş Yap
+            </button>
           </div>
-
-          {/* 6 Özellik kartı — 2x3 grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-8">
-            {OZELLIKLER.map(o => (
-              <div key={o.baslik} className="rounded-2xl p-3.5 border border-white/20 backdrop-blur-sm" style={{background:'rgba(255,255,255,0.12)'}}>
-                <p className="text-xl mb-1">{o.icon}</p>
-                <p className="text-white font-bold text-sm leading-tight">{o.baslik}</p>
-                <p className="text-white/65 text-xs mt-0.5 leading-snug">{o.acik}</p>
+          {/* Stats bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">
+            {STATS.map(s => (
+              <div key={s.label} className="rounded-2xl p-4" style={{background:'rgba(255,255,255,0.12)'}}>
+                <p className="text-2xl font-black text-white">{s.deger}</p>
+                <p className="text-white/90 text-xs font-bold mt-0.5">{s.label}</p>
+                <p className="text-white/50 text-xs mt-0.5">{s.alt}</p>
               </div>
             ))}
           </div>
-
-          {/* Alt fiyat notu */}
-          <p className="text-white/50 text-xs mt-6">
-            Kredi kartı gerekmez · 3 gün ücretsiz · Sonrasında $10/ay
-          </p>
         </div>
+      </section>
 
-        {/* SAĞ — auth formu */}
-        <div className="w-full md:w-96 lg:w-[400px] flex-shrink-0 flex flex-col justify-center order-1 md:order-2">
-          {AuthForm}
+      {/* ══════ ÖZELLİKLER ══════ */}
+      <section id="ozellikler" className="py-20 px-5 bg-slate-50">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-indigo-600 text-xs font-black uppercase tracking-widest mb-2">Platform</p>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-800">Kazanmak için ihtiyacın olan her şey</h2>
+            <p className="text-slate-500 mt-3 text-lg max-w-xl mx-auto">Dropshipping işini büyütmek için tasarlanmış 6 güçlü araç, tek platformda.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {OZELLIKLER.map((o, i) => (
+              <div key={o.baslik} className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                <div className="w-11 h-11 bg-indigo-50 rounded-xl flex items-center justify-center mb-4 text-2xl">{o.icon}</div>
+                <h3 className="font-black text-slate-800 text-base mb-2">{o.baslik}</h3>
+                <p className="text-slate-500 text-sm leading-relaxed">{o.acik}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* ── FOOTER ── */}
-      <footer style={{background:'rgba(0,0,0,0.25)'}} className="backdrop-blur-sm border-t border-white/10 mt-auto">
-        <div className="max-w-7xl mx-auto px-6 md:px-10 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/50">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-white/10 rounded-lg flex items-center justify-center">
-              <span className="font-black text-white text-xs">Y</span>
+      {/* ══════ NASIL ÇALIŞIR ══════ */}
+      <section id="nasil-calisir" className="py-20 px-5 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <p className="text-indigo-600 text-xs font-black uppercase tracking-widest mb-2">Süreç</p>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-800">Üç adımda başla</h2>
+            <p className="text-slate-500 mt-3 text-lg">Kayıt olmaktan ilk kâr analizine kadar sadece birkaç dakika.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {ADIMLAR.map((a, i) => (
+              <div key={a.no} className="relative text-center md:text-left">
+                {i < 2 && <div className="hidden md:block absolute top-8 left-full w-full h-px border-t-2 border-dashed border-indigo-200 -ml-4 z-0" style={{width:'calc(100% - 2rem)'}}></div>}
+                <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center mx-auto md:mx-0 mb-4 relative z-10">
+                  <span className="text-white font-black text-lg">{a.no}</span>
+                </div>
+                <h3 className="font-black text-slate-800 text-lg mb-2">{a.baslik}</h3>
+                <p className="text-slate-500 text-sm leading-relaxed">{a.acik}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ KARŞILAŞTIRMA TABLOSU ══════ */}
+      <section className="py-20 px-5 bg-slate-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-indigo-600 text-xs font-black uppercase tracking-widest mb-2">Karşılaştırma</p>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-800">Yalify vs Diğerleri</h2>
+            <p className="text-slate-500 mt-3 text-lg">Neden Excel veya genel araçlar yeterli değil?</p>
+          </div>
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="text-left px-5 py-4 text-xs font-black text-slate-500 uppercase tracking-widest">Özellik</th>
+                    <th className="text-center px-4 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Excel</th>
+                    <th className="text-center px-4 py-4 text-xs font-black text-slate-400 uppercase tracking-widest">Diğer Araçlar</th>
+                    <th className="text-center px-4 py-4 text-xs font-black text-indigo-600 uppercase tracking-widest bg-indigo-50">Yalify</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {KARSILASTIRMA.map((r, i) => (
+                    <tr key={r.ozellik} className={`border-b border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                      <td className="px-5 py-3.5 text-sm font-semibold text-slate-700">{r.ozellik}</td>
+                      <td className="px-4 py-3.5 text-center text-sm text-slate-400">{r.excel}</td>
+                      <td className="px-4 py-3.5 text-center text-sm text-slate-400">{r.diger}</td>
+                      <td className="px-4 py-3.5 text-center text-sm font-bold text-indigo-600 bg-indigo-50/40">{r.yalify}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <span className="font-semibold text-white/70">Yalify</span>
           </div>
-          <div className="flex gap-4">
-            <a href="#" className="hover:text-white transition">Kullanım Şartları</a>
-            <span>·</span>
-            <a href="#" className="hover:text-white transition">Gizlilik</a>
+        </div>
+      </section>
+
+      {/* ══════ YORUMLAR ══════ */}
+      <section className="py-20 px-5 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-indigo-600 text-xs font-black uppercase tracking-widest mb-2">Kullanıcılar</p>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-800">Kullananlar ne diyor?</h2>
+            <div className="flex items-center justify-center gap-1.5 mt-3">
+              <span className="text-yellow-400 text-lg">★★★★★</span>
+              <span className="text-slate-600 font-bold text-sm">4.9/5</span>
+              <span className="text-slate-400 text-sm">· Kullanıcı yorumları</span>
+            </div>
           </div>
-          <span>© 2026 Yalify</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {YORUMLAR.map(y => (
+              <div key={y.isim} className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                <div className="text-yellow-400 text-base mb-3">{'★'.repeat(y.yıldız)}</div>
+                <p className="text-slate-700 text-sm leading-relaxed italic mb-4">{y.metin}</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-black text-sm">{y.isim[0]}</div>
+                  <div>
+                    <p className="font-bold text-slate-800 text-sm">{y.isim}</p>
+                    <p className="text-slate-400 text-xs">{y.sure}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ FİYATLANDIRMA ══════ */}
+      <section id="fiyat" className="py-20 px-5 bg-slate-50">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-indigo-600 text-xs font-black uppercase tracking-widest mb-2">Fiyatlandırma</p>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-800">Basit, şeffaf fiyat</h2>
+            <p className="text-slate-500 mt-3 text-lg">Gizli ücret yok. İptal etmek her zaman ücretsiz.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
+            {/* Deneme */}
+            <div className="bg-white rounded-2xl p-7 border-2 border-slate-200 shadow-sm">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">Deneme</p>
+              <p className="text-4xl font-black text-slate-800">Ücretsiz</p>
+              <p className="text-slate-500 text-sm mt-1">3 gün, tam erişim</p>
+              <div className="border-t border-slate-100 mt-5 pt-5 space-y-2.5">
+                {['Tüm özelliklere erişim','6 araç aktif','Sınırsız kayıt','Kredi kartı gerekmez'].map(m => (
+                  <div key={m} className="flex items-center gap-2 text-sm text-slate-600"><span className="text-emerald-500 font-bold">✓</span>{m}</div>
+                ))}
+              </div>
+              <button onClick={() => openModal('register')} className="w-full mt-6 py-3 rounded-xl border-2 border-indigo-600 text-indigo-600 font-black text-sm hover:bg-indigo-50 transition">Ücretsiz Başla</button>
+            </div>
+            {/* Pro */}
+            <div className="bg-indigo-600 rounded-2xl p-7 border-2 border-indigo-600 shadow-xl relative overflow-hidden">
+              <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 text-xs font-black px-2.5 py-1 rounded-full">En Popüler</div>
+              <p className="text-xs font-black text-indigo-200 uppercase tracking-widest mb-1">Pro</p>
+              <div className="flex items-end gap-1">
+                <p className="text-4xl font-black text-white">$10</p>
+                <p className="text-indigo-200 text-sm mb-1.5">/ay</p>
+              </div>
+              <p className="text-indigo-200 text-sm mt-1">3 günlük denemeden sonra</p>
+              <div className="border-t border-indigo-500 mt-5 pt-5 space-y-2.5">
+                {['Tüm özelliklere tam erişim','Sınırsız sipariş kaydı','Ads keyword havuzu','Analitik ve raporlar','7/24 destek'].map(m => (
+                  <div key={m} className="flex items-center gap-2 text-sm text-white/90"><span className="text-yellow-300 font-bold">✓</span>{m}</div>
+                ))}
+              </div>
+              <button onClick={() => openModal('register')} className="w-full mt-6 py-3 rounded-xl bg-white text-indigo-700 font-black text-sm hover:bg-indigo-50 transition">Şimdi Başla</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ SSS ══════ */}
+      <section id="sss" className="py-20 px-5 bg-white">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-12">
+            <p className="text-indigo-600 text-xs font-black uppercase tracking-widest mb-2">Sık Sorulan Sorular</p>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-800">Aklındaki sorular</h2>
+          </div>
+          <div className="space-y-3">
+            {SSS.map((item, i) => (
+              <div key={i} className="border border-slate-200 rounded-2xl overflow-hidden">
+                <button onClick={() => setOpenFaq(openFaq===i ? null : i)}
+                  className="w-full flex justify-between items-center px-5 py-4 text-left hover:bg-slate-50 transition">
+                  <span className="font-bold text-slate-800 text-sm pr-4">{item.s}</span>
+                  <span className={`text-slate-400 font-black text-lg flex-shrink-0 transition-transform ${openFaq===i ? 'rotate-45' : ''}`}>+</span>
+                </button>
+                {openFaq === i && (
+                  <div className="px-5 pb-4 text-slate-500 text-sm leading-relaxed border-t border-slate-100 pt-3">{item.c}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════ SON CTA ══════ */}
+      <section className="py-20 px-5" style={{background:'linear-gradient(135deg,#667eea 0%,#764ba2 55%,#06b6d4 100%)'}}>
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl sm:text-4xl font-black text-white mb-4">Dropshipping'ini büyüt</h2>
+          <p className="text-white/70 text-lg mb-8 max-w-xl mx-auto">3 günlük ücretsiz denemeyi başlat. Kredi kartı bilgisi girmene gerek yok.</p>
+          <button onClick={() => openModal('register')} className="px-10 py-4 bg-white text-indigo-700 font-black rounded-2xl text-lg hover:bg-indigo-50 transition shadow-2xl">
+            Ücretsiz Başla — 3 Gün
+          </button>
+          <p className="text-white/40 text-xs mt-4">Kredi kartı gerekmez · İstediğin zaman iptal et · Anında kurulum</p>
+        </div>
+      </section>
+
+      {/* ══════ FOOTER ══════ */}
+      <footer className="bg-slate-900 text-slate-400">
+        <div className="max-w-5xl mx-auto px-5 py-12">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 pb-10 border-b border-slate-800">
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center"><span className="text-white font-black text-sm">Y</span></div>
+                <span className="text-white font-black text-base">Yalify</span>
+              </div>
+              <p className="text-sm leading-relaxed">Türkiye'nin dropshipping kâr takip ve analiz platformu.</p>
+              <p className="text-xs mt-3 text-slate-500">© 2026 Yalify. Tüm hakları saklıdır.</p>
+            </div>
+            <div>
+              <p className="text-white font-bold text-sm mb-3">Platform</p>
+              <div className="space-y-2 text-sm">
+                <p><a href="#ozellikler" className="hover:text-white transition">Özellikler</a></p>
+                <p><a href="#nasil-calisir" className="hover:text-white transition">Nasıl Çalışır</a></p>
+                <p><a href="#fiyat" className="hover:text-white transition">Fiyatlandırma</a></p>
+                <p><a href="#sss" className="hover:text-white transition">SSS</a></p>
+              </div>
+            </div>
+            <div>
+              <p className="text-white font-bold text-sm mb-3">Yasal</p>
+              <div className="space-y-2 text-sm">
+                <p><a href="#" className="hover:text-white transition">Kullanım Şartları</a></p>
+                <p><a href="#" className="hover:text-white transition">Gizlilik Politikası</a></p>
+                <p><a href="#" className="hover:text-white transition">İletişim</a></p>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 text-xs">
+            <span>Yalify · Dropshipping Dashboard</span>
+            <button onClick={() => openModal('register')} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition text-xs">Ücretsiz Başla →</button>
+          </div>
         </div>
       </footer>
     </div>
