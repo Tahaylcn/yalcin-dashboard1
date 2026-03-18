@@ -67,7 +67,9 @@ const INITIAL_IS_RECOVERY = (
 /* ═══ SUPABASE ═══ */
 const SUPA_URL = 'https://iqbjzltpwidtwjpkjnvb.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxYmp6bHRwd2lkdHdqcGtqbnZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEwNjUsImV4cCI6MjA4OTM1NzA2NX0.FoBUxvtzX8vHgfA6q_84Ysg80cZsF4iO5xQ4QTCv_RU';
-const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+  auth: { flowType: 'implicit' }
+});
 
 const TRIAL_DAYS = 3;
 const PLAN_PRICE = '$10/ay';
