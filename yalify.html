@@ -1520,6 +1520,8 @@ function ResetPasswordScreen() {
 ═══════════════════════════════════ */
 function App() {
   const [authState, setAuthState] = useState('loading');
+  const authStateRef = useRef('loading');
+  const setAuthStateBoth = s => { authStateRef.current = s; setAuthState(s); };
   const [user, setUser]     = useState(null);
   const [profile, setProfile] = useState(null);
 
@@ -1538,25 +1540,28 @@ function App() {
   };
 
   useEffect(() => {
-    // URL hash'te type=recovery varsa direkt reset ekranını göster
-    const hash = window.location.hash;
-    if (hash && hash.includes('type=recovery')) {
-      setAuthState('recovery');
-      return;
-    }
-    sb.auth.getSession().then(({ data: { session } }) => {
-      if (session) { setUser(session.user); loadProfile(session.user.id, session.user.email); setAuthState('authed'); }
-      else setAuthState('guest');
-    });
+    // Listener'ı getSession'dan ÖNCE kur — PASSWORD_RECOVERY yakalamak için
     const { data: { subscription } } = sb.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') { setAuthState('recovery'); return; }
-      if (session) { setUser(session.user); loadProfile(session.user.id, session.user.email); setAuthState('authed'); }
-      else { setUser(null); setProfile(null); setAuthState('guest'); }
+      if (event === 'PASSWORD_RECOVERY') { setAuthStateBoth('recovery'); return; }
+      if (event === 'SIGNED_IN' && authStateRef.current === 'recovery') return;
+      if (session) { setUser(session.user); loadProfile(session.user.id, session.user.email); setAuthStateBoth('authed'); }
+      else { setUser(null); setProfile(null); setAuthStateBoth('guest'); }
     });
+
+    // Hash veya query'de recovery token var mı kontrol et
+    const url = window.location.href;
+    if (url.includes('type=recovery') || url.includes('type%3Drecovery')) {
+      setAuthStateBoth('recovery');
+    } else {
+      sb.auth.getSession().then(({ data: { session } }) => {
+        if (session) { setUser(session.user); loadProfile(session.user.id, session.user.email); setAuthStateBoth('authed'); }
+        else setAuthStateBoth('guest');
+      });
+    }
     return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = () => sb.auth.signOut();
+  const signOut = () => { setAuthStateBoth('guest'); sb.auth.signOut(); };
 
   if (authState === 'loading')   return <LoadingScreen />;
   if (authState === 'recovery')  return <ResetPasswordScreen />;
