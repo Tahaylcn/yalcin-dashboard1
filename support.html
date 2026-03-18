@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Destek — Yalify</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .section-heading {
+      border-left: 4px solid #6366f1;
+      padding-left: 0.75rem;
+    }
+    .faq-item summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-item summary .chevron {
+      flex-shrink: 0;
+      transition: transform 0.2s ease;
+      color: #6366f1;
+      font-size: 1.1rem;
+    }
+    .faq-item[open] summary .chevron {
+      transform: rotate(180deg);
+    }
+    .faq-item[open] summary {
+      color: #4338ca;
+    }
+  </style>
+</head>
+<body class="bg-white text-slate-600">
+
+  <!-- Navbar -->
+  <nav class="border-b border-slate-200 bg-white sticky top-0 z-10">
+    <div class="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 no-underline">
+        <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-sm">Y</div>
+        <span class="text-slate-800 font-semibold text-lg">Yalify</span>
+      </a>
+      <a href="/" class="text-indigo-500 hover:text-indigo-700 text-sm font-medium transition-colors">← Ana Sayfa</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <div class="bg-indigo-50 border-b border-indigo-100">
+    <div class="max-w-3xl mx-auto px-6 py-14 text-center">
+      <h1 class="text-4xl font-bold text-slate-800 mb-3">Nasıl yardımcı olabiliriz?</h1>
+      <p class="text-slate-500 text-lg max-w-xl mx-auto">Yalify ekibi size yardımcı olmak için burada. Aşağıdan sık sorulan sorulara göz atın ya da doğrudan bizimle iletişime geçin.</p>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="max-w-3xl mx-auto px-6 py-12">
+
+    <!-- Contact Card -->
+    <section class="mb-12">
+      <h2 class="text-xl font-bold text-slate-800 section-heading mb-5">Bize Ulaşın</h2>
+      <div class="border border-slate-200 rounded-xl p-6 flex flex-col sm:flex-row gap-5 items-start sm:items-center">
+        <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+          <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <h3 class="text-slate-800 font-semibold mb-1">E-posta Desteği</h3>
+          <p class="text-slate-500 text-sm leading-relaxed mb-2">Teknik sorunlar, hesap yönetimi, faturalandırma ve genel sorularınız için e-posta gönderin. Yanıtlarınızı iş günleri içinde iletiyoruz.</p>
+          <a href="mailto:tahaecom5@gmail.com" class="text-indigo-500 font-medium hover:text-indigo-700 transition-colors">tahaecom5@gmail.com</a>
+        </div>
+        <div class="flex-shrink-0">
+          <span class="bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full">1-2 iş günü yanıt</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SSS -->
+    <section class="mb-12">
+      <h2 class="text-xl font-bold text-slate-800 section-heading mb-5">Sık Sorulan Sorular</h2>
+      <div class="space-y-3">
+
+        <!-- SSS 1 -->
+        <details class="faq-item border border-slate-200 rounded-xl overflow-hidden">
+          <summary class="px-5 py-4 text-slate-800 font-medium bg-white hover:bg-slate-50 transition-colors">
+            <span>Ücretsiz deneme nasıl başlar?</span>
+            <span class="chevron">▾</span>
+          </summary>
+          <div class="px-5 pb-5 pt-3 bg-white border-t border-slate-100 text-slate-600 text-sm leading-relaxed">
+            <p>Yalify'a kayıt olduğunuz anda 3 günlük ücretsiz denemeniz otomatik olarak başlar. Deneme süresinde kredi kartı bilgisi girmeniz gerekmez ve hiçbir ücret tahsil edilmez. Tüm özelliklere tam erişim hakkınız vardır. Deneme süresi bitiminde abonelik satın almak isterseniz Stripe üzerinden ödeme adımını tamamlamanız yeterlidir.</p>
+          </div>
+        </details>
+
+        <!-- SSS 2 -->
+        <details class="faq-item border border-slate-200 rounded-xl overflow-hidden">
+          <summary class="px-5 py-4 text-slate-800 font-medium bg-white hover:bg-slate-50 transition-colors">
+            <span>Aboneliği nasıl iptal ederim?</span>
+            <span class="chevron">▾</span>
+          </summary>
+          <div class="px-5 pb-5 pt-3 bg-white border-t border-slate-100 text-slate-600 text-sm leading-relaxed">
+            <p>Aboneliğinizi iki yolla iptal edebilirsiniz:</p>
+            <ol class="list-decimal list-inside mt-2 space-y-1">
+              <li>Uygulama içindeki "Abonelik Yönet" bağlantısına tıklayarak Stripe Customer Portal'a gidin ve iptal edin.</li>
+              <li><a href="mailto:tahaecom5@gmail.com" class="text-indigo-500 hover:underline">tahaecom5@gmail.com</a> adresine "İptal talebi" konulu bir e-posta gönderin; ekibimiz sizin adınıza işlemi tamamlar.</li>
+            </ol>
+            <p class="mt-2">İptalden sonra mevcut fatura döneminin sonuna kadar hizmete erişiminiz devam eder; verilerinizi o süre içinde dışa aktarabilirsiniz.</p>
+          </div>
+        </details>
+
+        <!-- SSS 3 -->
+        <details class="faq-item border border-slate-200 rounded-xl overflow-hidden">
+          <summary class="px-5 py-4 text-slate-800 font-medium bg-white hover:bg-slate-50 transition-colors">
+            <span>Verilerimi nasıl silerim?</span>
+            <span class="chevron">▾</span>
+          </summary>
+          <div class="px-5 pb-5 pt-3 bg-white border-t border-slate-100 text-slate-600 text-sm leading-relaxed">
+            <p>Verilerinizi silmek için iki seçeneğiniz vardır:</p>
+            <ul class="list-disc list-inside mt-2 space-y-1">
+              <li><strong>Hesabı Sil:</strong> Ayarlar bölümünden hesabınızı kalıcı olarak silebilirsiniz. Bu işlem tüm sipariş, ürün, bütçe ve kişisel verilerinizi 30 gün içinde sistemlerimizden kaldırır.</li>
+              <li><strong>E-posta ile Talep:</strong> <a href="mailto:tahaecom5@gmail.com" class="text-indigo-500 hover:underline">tahaecom5@gmail.com</a> adresine "Veri silme talebi" konulu bir e-posta gönderin.</li>
+            </ul>
+            <p class="mt-2">Silme işlemi geri alınamaz. Silmeden önce CSV dışa aktarma özelliğiyle verilerinizi yedeklemenizi öneririz.</p>
+          </div>
+        </details>
+
+        <!-- SSS 4 -->
+        <details class="faq-item border border-slate-200 rounded-xl overflow-hidden">
+          <summary class="px-5 py-4 text-slate-800 font-medium bg-white hover:bg-slate-50 transition-colors">
+            <span>Şifremi unuttum; ne yapmalıyım?</span>
+            <span class="chevron">▾</span>
+          </summary>
+          <div class="px-5 pb-5 pt-3 bg-white border-t border-slate-100 text-slate-600 text-sm leading-relaxed">
+            <p>Giriş sayfasındaki <strong>"Şifremi Unuttum"</strong> bağlantısına tıklayın. Hesabınıza kayıtlı e-posta adresinize şifre sıfırlama bağlantısı gönderilecektir. Bağlantı 1 saat geçerlidir. E-posta gelmediyse spam/önemsiz klasörünüzü kontrol edin. Sorun devam ederse <a href="mailto:tahaecom5@gmail.com" class="text-indigo-500 hover:underline">tahaecom5@gmail.com</a> adresine yazın; hesabınızı kimlik doğrulamasıyla sıfırlayalım.</p>
+          </div>
+        </details>
+
+        <!-- SSS 5 -->
+        <details class="faq-item border border-slate-200 rounded-xl overflow-hidden">
+          <summary class="px-5 py-4 text-slate-800 font-medium bg-white hover:bg-slate-50 transition-colors">
+            <span>Hangi platformlar destekleniyor?</span>
+            <span class="chevron">▾</span>
+          </summary>
+          <div class="px-5 pb-5 pt-3 bg-white border-t border-slate-100 text-slate-600 text-sm leading-relaxed">
+            <p>Yalify, platforma bağımlı olmayan bir dropshipping yönetim panelidir. Sipariş ve ürün verilerinizi manuel olarak veya CSV yükleme yöntemiyle ekleyebilirsiniz. Mevcut sürümde yerleşik API entegrasyonu; Shopify, WooCommerce ve benzeri platformlarla doğrudan bağlantı yoktur. Verilerinizi CSV biçiminde dışa aktararak herhangi bir araçla kullanabilirsiniz.</p>
+          </div>
+        </details>
+
+        <!-- SSS 6 -->
+        <details class="faq-item border border-slate-200 rounded-xl overflow-hidden">
+          <summary class="px-5 py-4 text-slate-800 font-medium bg-white hover:bg-slate-50 transition-colors">
+            <span>CSV dışa aktarma nasıl çalışır?</span>
+            <span class="chevron">▾</span>
+          </summary>
+          <div class="px-5 pb-5 pt-3 bg-white border-t border-slate-100 text-slate-600 text-sm leading-relaxed">
+            <p>Paneldeki herhangi bir bölümde (siparişler, ürünler, bütçe vb.) sağ üst köşedeki <strong>"Dışa Aktar"</strong> veya <strong>"CSV İndir"</strong> butonuna tıklayın. İndirme işlemi anında başlar. Dışa aktarılan CSV dosyası, ilgili bölümdeki tüm kayıtları ve sütunları içerir; Excel, Google Sheets veya veri analizi araçlarıyla açabilirsiniz.</p>
+          </div>
+        </details>
+
+        <!-- SSS 7 -->
+        <details class="faq-item border border-slate-200 rounded-xl overflow-hidden">
+          <summary class="px-5 py-4 text-slate-800 font-medium bg-white hover:bg-slate-50 transition-colors">
+            <span>Yalify'ı mobilde kullanabilir miyim?</span>
+            <span class="chevron">▾</span>
+          </summary>
+          <div class="px-5 pb-5 pt-3 bg-white border-t border-slate-100 text-slate-600 text-sm leading-relaxed">
+            <p>Evet. Yalify, mobil tarayıcılarda da çalışan duyarlı (responsive) bir web uygulamasıdır. Chrome, Safari veya Firefox gibi güncel mobil tarayıcılardan sorunsuz erişebilirsiniz. Ek olarak Yalify, <strong>Progressive Web App (PWA)</strong> teknolojisiyle sunulmaktadır; tarayıcıdan "Ana ekrana ekle" seçeneğiyle uygulamayı telefonunuzun ana ekranına kısayol olarak ekleyebilirsiniz.</p>
+          </div>
+        </details>
+
+        <!-- SSS 8 -->
+        <details class="faq-item border border-slate-200 rounded-xl overflow-hidden">
+          <summary class="px-5 py-4 text-slate-800 font-medium bg-white hover:bg-slate-50 transition-colors">
+            <span>Fatura veya makbuz alabilir miyim?</span>
+            <span class="chevron">▾</span>
+          </summary>
+          <div class="px-5 pb-5 pt-3 bg-white border-t border-slate-100 text-slate-600 text-sm leading-relaxed">
+            <p>Evet. Her ödemenin ardından Stripe, aboneliğe kayıtlı e-posta adresinize otomatik olarak bir makbuz gönderir. Fatura geçmişinizi ve PDF faturalarınızı Stripe Customer Portal üzerinden de görüntüleyebilir ve indirebilirsiniz. Kurumsal faturalandırma veya özel ödeme bilgisi eklenmesi için <a href="mailto:tahaecom5@gmail.com" class="text-indigo-500 hover:underline">tahaecom5@gmail.com</a> adresine yazın.</p>
+          </div>
+        </details>
+
+        <!-- SSS 9 -->
+        <details class="faq-item border border-slate-200 rounded-xl overflow-hidden">
+          <summary class="px-5 py-4 text-slate-800 font-medium bg-white hover:bg-slate-50 transition-colors">
+            <span>Başabaş hesaplama nasıl çalışır?</span>
+            <span class="chevron">▾</span>
+          </summary>
+          <div class="px-5 pb-5 pt-3 bg-white border-t border-slate-100 text-slate-600 text-sm leading-relaxed">
+            <p>Başabaş (break-even) hesaplayıcı, ürünlerinizin kâra geçebilmesi için gereken minimum satış miktarını ve fiyatını otomatik olarak hesaplar. Girmeniz gereken bilgiler:</p>
+            <ul class="list-disc list-inside mt-2 space-y-1">
+              <li>Ürün maliyeti (tedarikçi fiyatı)</li>
+              <li>Kargo / işlem giderleri</li>
+              <li>Reklam ve pazarlama maliyeti</li>
+              <li>Hedef satış fiyatı</li>
+            </ul>
+            <p class="mt-2">Hesaplayıcı bu verilere dayanarak başabaş birim sayısını ve tahmini kâr marjını gösterir.</p>
+          </div>
+        </details>
+
+        <!-- SSS 10 -->
+        <details class="faq-item border border-slate-200 rounded-xl overflow-hidden">
+          <summary class="px-5 py-4 text-slate-800 font-medium bg-white hover:bg-slate-50 transition-colors">
+            <span>Birden fazla mağaza ekleyebilir miyim?</span>
+            <span class="chevron">▾</span>
+          </summary>
+          <div class="px-5 pb-5 pt-3 bg-white border-t border-slate-100 text-slate-600 text-sm leading-relaxed">
+            <p>Evet, Yalify birden fazla mağazayı tek bir hesap altında yönetmenize olanak tanır. Sipariş ve bütçe kayıtlarınızı mağazaya göre filtreleyebilir, her mağaza için ayrı raporlar oluşturabilirsiniz. Mevcut $10/ay planında mağaza sayısı sınırı hakkındaki güncel bilgiye ulaşmak veya yüksek hacimli ihtiyaçlarınız için <a href="mailto:tahaecom5@gmail.com" class="text-indigo-500 hover:underline">tahaecom5@gmail.com</a> adresine yazın.</p>
+          </div>
+        </details>
+
+      </div>
+    </section>
+
+    <!-- Hızlı Başlangıç -->
+    <section class="mb-12">
+      <h2 class="text-xl font-bold text-slate-800 section-heading mb-5">Hızlı Başlangıç Kılavuzu</h2>
+      <p class="text-slate-600 text-sm mb-5">Yalify'ı ilk kez kullanıyorsanız aşağıdaki adımları takip ederek birkaç dakika içinde kurulumu tamamlayabilirsiniz:</p>
+      <div class="space-y-4">
+
+        <div class="flex gap-4 items-start">
+          <div class="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-sm flex-shrink-0 mt-0.5">1</div>
+          <div>
+            <h4 class="text-slate-800 font-semibold mb-1">Hesap Oluşturun</h4>
+            <p class="text-sm text-slate-500 leading-relaxed">yalify.app adresine gidin ve "Ücretsiz Başla" butonuna tıklayın. E-posta adresiniz ve bir şifre ile kayıt olun. Denemeniz anında başlar.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-4 items-start">
+          <div class="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-sm flex-shrink-0 mt-0.5">2</div>
+          <div>
+            <h4 class="text-slate-800 font-semibold mb-1">Mağazanızı Ekleyin</h4>
+            <p class="text-sm text-slate-500 leading-relaxed">Panelde "Mağazalar" bölümüne gidin, yeni bir mağaza oluşturun ve mağaza adını girin. Birden fazla mağazanız varsa hepsini ekleyebilirsiniz.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-4 items-start">
+          <div class="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-sm flex-shrink-0 mt-0.5">3</div>
+          <div>
+            <h4 class="text-slate-800 font-semibold mb-1">Ürünlerinizi Girin</h4>
+            <p class="text-sm text-slate-500 leading-relaxed">"Ürünler" bölümünden ürünlerinizi manuel olarak ekleyin ya da CSV şablonunu indirerek toplu yükleme yapın. Ürün maliyeti ve satış fiyatı girildiğinde kâr marjı otomatik hesaplanır.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-4 items-start">
+          <div class="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-sm flex-shrink-0 mt-0.5">4</div>
+          <div>
+            <h4 class="text-slate-800 font-semibold mb-1">Siparişleri Takip Edin</h4>
+            <p class="text-sm text-slate-500 leading-relaxed">"Siparişler" bölümüne geçerek yeni sipariş kayıtları ekleyin. Kargo durumunu güncelleyin ve müşteri bilgilerini kaydedin. Pano ekranınızda siparişlerin özet istatistiklerini anlık olarak görebilirsiniz.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-4 items-start">
+          <div class="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-sm flex-shrink-0 mt-0.5">5</div>
+          <div>
+            <h4 class="text-slate-800 font-semibold mb-1">Bütçe ve Giderleri Yönetin</h4>
+            <p class="text-sm text-slate-500 leading-relaxed">"Bütçe" bölümünden gelir ve giderlerinizi girin. Başabaş hesaplayıcıyı kullanarak kârlılık analizinizi yapın ve CSV ile raporlarınızı dışa aktarın.</p>
+          </div>
+        </div>
+
+        <div class="flex gap-4 items-start">
+          <div class="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-sm flex-shrink-0 mt-0.5">6</div>
+          <div>
+            <h4 class="text-slate-800 font-semibold mb-1">Aboneliği Etkinleştirin</h4>
+            <p class="text-sm text-slate-500 leading-relaxed">3 günlük deneme süreniz dolmadan önce Stripe üzerinden aylık $10 aboneliğinizi başlatın. Kart bilgilerinizi güvenli şekilde Stripe'a girin; Yalify bu verilere erişmez.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Bug Report -->
+    <section class="mb-10">
+      <h2 class="text-xl font-bold text-slate-800 section-heading mb-4">Sorun Bildirimi</h2>
+      <p class="text-slate-600 text-base leading-relaxed mb-4">
+        Bir hata, beklenmedik davranış veya güvenlik açığı fark ettiniz mi? Aşağıdaki bilgileri e-posta ile iletirseniz sorunu en kısa sürede inceleyip çözeceğiz:
+      </p>
+      <ul class="list-disc list-inside space-y-1 text-sm text-slate-500 mb-5">
+        <li>Sorunun özeti ve nasıl yeniden üretileceği (adım adım)</li>
+        <li>Kullandığınız tarayıcı ve işletim sistemi</li>
+        <li>Ekran görüntüsü veya video kaydı (varsa)</li>
+        <li>Sorunun ilk ne zaman başladığı</li>
+      </ul>
+      <a href="mailto:tahaecom5@gmail.com?subject=Yalify%20Sorun%20Bildirimi"
+         class="inline-block bg-indigo-500 hover:bg-indigo-600 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors text-sm">
+        Sorun Bildir: tahaecom5@gmail.com
+      </a>
+    </section>
+
+    <!-- Contact Box -->
+    <div class="bg-indigo-500 rounded-xl p-6 text-white mt-10">
+      <h3 class="text-lg font-bold mb-2">Hâlâ sorunuz mu var?</h3>
+      <p class="text-indigo-100 text-sm leading-relaxed mb-3">
+        SSS'de cevabını bulamadığınız bir sorunuz, teknik bir problem veya özel bir talebiniz varsa doğrudan ekibimize yazın. Tüm e-postalara 1-2 iş günü içinde yanıt veriyoruz.
+      </p>
+      <p class="font-medium">
+        TAHAYLCN LLC &nbsp;·&nbsp;
+        <a href="mailto:tahaecom5@gmail.com" class="underline hover:text-indigo-200">tahaecom5@gmail.com</a>
+      </p>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200 mt-12">
+    <div class="max-w-3xl mx-auto px-6 py-6 text-sm text-slate-400 flex flex-wrap items-center justify-between gap-3">
+      <span>© 2026 TAHAYLCN LLC. Tüm hakları saklıdır.</span>
+      <div class="flex gap-4">
+        <a href="/privacy.html" class="hover:text-indigo-500 transition-colors">Gizlilik</a>
+        <a href="/terms.html" class="hover:text-indigo-500 transition-colors">Kullanım Şartları</a>
+        <a href="/support.html" class="hover:text-indigo-500 transition-colors">Destek</a>
+        <a href="/refund.html" class="hover:text-indigo-500 transition-colors">İade Politikası</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>
