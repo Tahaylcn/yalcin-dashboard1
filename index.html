@@ -48,6 +48,8 @@
     .score-btn{width:28px;height:28px;border-radius:6px;border:1.5px solid #e2e8f0;background:#f8fafc;color:#64748b;font-weight:700;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.1s}
     .score-btn.active{background:#6366f1;color:#fff;border-color:#6366f1}
     .auth-bg{min-height:100vh;background:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#06b6d4 100%);display:flex;align-items:center;justify-content:center;padding:16px}
+    .scrollbar-hide::-webkit-scrollbar{display:none}
+    .scrollbar-hide{-ms-overflow-style:none;scrollbar-width:none}
   </style>
 </head>
 <body>
@@ -55,14 +57,22 @@
 <script type="text/babel">
 const { useState, useMemo, useCallback, useEffect, useRef } = React;
 
+/* ═══ RECOVERY CHECK — React mount edilmeden önce URL kontrol ═══ */
+const INITIAL_IS_RECOVERY = (
+  window.location.hash.includes('type=recovery') ||
+  window.location.search.includes('type=recovery') ||
+  window.location.href.includes('type=recovery')
+);
+
 /* ═══ SUPABASE ═══ */
 const SUPA_URL = 'https://iqbjzltpwidtwjpkjnvb.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxYmp6bHRwd2lkdHdqcGtqbnZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEwNjUsImV4cCI6MjA4OTM1NzA2NX0.FoBUxvtzX8vHgfA6q_84Ysg80cZsF4iO5xQ4QTCv_RU';
-const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, {
+  auth: { flowType: 'implicit' }
+});
 
 const TRIAL_DAYS = 3;
 const PLAN_PRICE = '$10/ay';
-// Stripe ödeme linki — oluşturduktan sonra buraya yaz:
 const STRIPE_LINK = 'https://buy.stripe.com/3cIcN692j2cR3dqecjdEs00';
 
 /* ═══ UTILS ═══ */
@@ -245,6 +255,14 @@ function AuthScreen() {
     else { setOk('✅ Kayıt başarılı! E-postana doğrulama maili gönderildi. Maildeki linke tıklayınca otomatik giriş yapacaksın.'); }
   };
 
+  const sendReset = async () => {
+    setErr(''); setLoading(true);
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://yalify.app' });
+    setLoading(false);
+    if (error) setErr(error.message);
+    else setOk('✅ Şifre sıfırlama linki e-postana gönderildi.');
+  };
+
   return (
     <div className="auth-bg">
       <div className="w-full max-w-md">
@@ -259,15 +277,23 @@ function AuthScreen() {
 
         {/* Card */}
         <div className="bg-white rounded-3xl p-8 shadow-2xl">
-          {/* Tabs */}
-          <div className="flex bg-slate-100 rounded-xl p-1 mb-6">
-            {[['login','Giriş Yap'],['register','Kayıt Ol']].map(([m, l]) => (
-              <button key={m} onClick={() => { setMod(m); setErr(''); setOk(''); }}
-                className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${mod === m ? 'bg-white shadow text-indigo-600' : 'text-slate-500'}`}>
-                {l}
-              </button>
-            ))}
-          </div>
+          {mod !== 'forgot' && (
+            <div className="flex bg-slate-100 rounded-xl p-1 mb-6">
+              {[['login','Giriş Yap'],['register','Kayıt Ol']].map(([m, l]) => (
+                <button key={m} onClick={() => { setMod(m); setErr(''); setOk(''); }}
+                  className={`flex-1 py-2 rounded-lg text-sm font-bold transition ${mod === m ? 'bg-white shadow text-indigo-600' : 'text-slate-500'}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {mod === 'forgot' && (
+            <div className="mb-6">
+              <h2 className="text-lg font-black text-slate-800">Şifremi Unuttum</h2>
+              <p className="text-sm text-slate-500 mt-1">E-posta adresini gir, sıfırlama linkini gönderelim.</p>
+            </div>
+          )}
 
           {mod === 'register' && (
             <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 mb-4 text-center">
@@ -281,11 +307,15 @@ function AuthScreen() {
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                 className="inp" placeholder="ornek@email.com" autoComplete="email" />
             </Field>
-            <Field label="Şifre">
-              <input type="password" value={pw} onChange={e => setPw(e.target.value)}
-                className="inp" placeholder="••••••••" autoComplete={mod === 'login' ? 'current-password' : 'new-password'}
-                onKeyDown={e => e.key === 'Enter' && mod === 'login' && login()} />
-            </Field>
+
+            {mod !== 'forgot' && (
+              <Field label="Şifre">
+                <input type="password" value={pw} onChange={e => setPw(e.target.value)}
+                  className="inp" placeholder="••••••••" autoComplete={mod === 'login' ? 'current-password' : 'new-password'}
+                  onKeyDown={e => e.key === 'Enter' && mod === 'login' && login()} />
+              </Field>
+            )}
+
             {mod === 'register' && (
               <Field label="Şifre Tekrar">
                 <input type="password" value={pw2} onChange={e => setPw2(e.target.value)}
@@ -296,11 +326,33 @@ function AuthScreen() {
             {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</p>}
             {ok  && <p className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{ok}</p>}
 
-            <button onClick={mod === 'login' ? login : register} disabled={loading}
-              className="btn-primary flex items-center justify-center gap-2">
-              {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />}
-              {mod === 'login' ? 'Giriş Yap' : `Ücretsiz Başla (${TRIAL_DAYS} gün)`}
-            </button>
+            {mod === 'forgot' ? (
+              <>
+                <button onClick={sendReset} disabled={loading}
+                  className="btn-primary flex items-center justify-center gap-2">
+                  {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />}
+                  Sıfırlama Maili Gönder
+                </button>
+                <button onClick={() => { setMod('login'); setErr(''); setOk(''); }}
+                  className="w-full text-center text-sm text-indigo-600 hover:text-indigo-800 transition font-semibold mt-1">
+                  ← Giriş Yap'a dön
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={mod === 'login' ? login : register} disabled={loading}
+                  className="btn-primary flex items-center justify-center gap-2">
+                  {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />}
+                  {mod === 'login' ? 'Giriş Yap' : `Ücretsiz Başla (${TRIAL_DAYS} gün)`}
+                </button>
+                {mod === 'login' && (
+                  <button onClick={() => { setMod('forgot'); setErr(''); setOk(''); }}
+                    className="w-full text-center text-sm text-slate-400 hover:text-indigo-600 transition mt-1">
+                    Şifremi unuttum?
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
 
@@ -362,6 +414,316 @@ function TrialBanner({ daysLeft }) {
         className="text-xs bg-amber-500 text-white font-bold px-3 py-1 rounded-full hover:bg-amber-600 transition">
         Abone Ol — {PLAN_PRICE}
       </a>
+    </div>
+  );
+}
+
+/* ═══ EMAIL VERIFICATION BANNER ═══ */
+function EmailVerifBanner({ user }) {
+  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
+
+  if (!user || user.email_confirmed_at) return null;
+
+  const resend = async () => {
+    setSending(true);
+    await sb.auth.resend({ type: 'signup', email: user.email });
+    setSending(false);
+    setSent(true);
+    setTimeout(() => setSent(false), 5000);
+  };
+
+  return (
+    <div className="bg-amber-50 border-b border-amber-300 px-4 py-2 flex items-center justify-between gap-2">
+      <p className="text-xs font-semibold text-amber-800">
+        📧 E-postanızı doğrulayın — doğrulama maili gönderilmedi mi?
+      </p>
+      {sent ? (
+        <span className="text-xs font-bold text-emerald-600 whitespace-nowrap">✅ Mail gönderildi!</span>
+      ) : (
+        <button onClick={resend} disabled={sending}
+          className="text-xs bg-amber-500 text-white font-bold px-3 py-1 rounded-full hover:bg-amber-600 transition whitespace-nowrap">
+          {sending ? '...' : 'Yeniden Gönder'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ═══ ONBOARDING WIZARD ═══ */
+function OnboardingWizard({ user, onComplete, onAddProduct }) {
+  const [step, setStep] = useState(1);
+  const [displayName, setDisplayName] = useState('');
+  const [storeName, setStoreName] = useState('');
+  const [platform, setPlatform] = useState('Shopify');
+  const [urunAdi, setUrunAdi] = useState('');
+  const [satisFiyati, setSatisFiyati] = useState('');
+  const [tedarikFiyati, setTedarikFiyati] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const complete = async (skipProduct) => {
+    setSaving(true);
+    await sb.from('profiles').update({
+      onboarding_completed: true,
+      display_name: displayName,
+      store_name: storeName,
+      platform: platform
+    }).eq('id', user.id);
+
+    if (!skipProduct && urunAdi.trim()) {
+      const newProduct = {
+        id: uid(),
+        urunAdi: urunAdi.trim(),
+        durum: 'arastirma',
+        fbAdsLink: '',
+        shopifyLink: '',
+        tedarikciLink: '',
+        magazaLink: '',
+        aktifReklam: '',
+        enEskiTarih: '',
+        rakipFiyat: satisFiyati,
+        tedarikFiyati: tedarikFiyati,
+        kargoMaliyeti: '',
+        hedefPazar: '',
+        reklamUlkesi: '',
+        notlar: '',
+        puan: 0,
+        eklenTarih: new Date().toISOString()
+      };
+      onAddProduct(newProduct);
+    }
+    setSaving(false);
+    onComplete({ display_name: displayName, store_name: storeName, platform });
+  };
+
+  const skip = () => {
+    if (step < 3) setStep(3);
+    else complete(true);
+  };
+
+  const TOTAL_STEPS = 3;
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#06b6d4 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+      <div style={{ background: '#fff', borderRadius: '24px', width: '100%', maxWidth: '480px', padding: '32px', boxShadow: '0 25px 60px rgba(0,0,0,0.3)' }}>
+        {/* Progress dots */}
+        <div className="flex justify-center gap-2 mb-8">
+          {[1,2,3].map(s => (
+            <div key={s} style={{
+              width: s === step ? '24px' : '10px',
+              height: '10px',
+              borderRadius: '99px',
+              background: s <= step ? '#6366f1' : '#e2e8f0',
+              transition: 'all .3s'
+            }} />
+          ))}
+        </div>
+
+        {step === 1 && (
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-2xl font-black text-slate-800">Mağazanı tanıtalım</h2>
+              <p className="text-slate-500 text-sm mt-1">Birkaç bilgi gir, dashboard'u kişiselleştirelim.</p>
+            </div>
+            <Field label="Adın / Takma Adın">
+              <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)}
+                className="inp" placeholder="ör. Ahmet" autoFocus />
+            </Field>
+            <Field label="Mağaza Adı">
+              <input type="text" value={storeName} onChange={e => setStoreName(e.target.value)}
+                className="inp" placeholder="ör. TrendShop" />
+            </Field>
+            <Field label="Platform">
+              <select value={platform} onChange={e => setPlatform(e.target.value)} className="inp">
+                <option value="Shopify">Shopify</option>
+                <option value="WooCommerce">WooCommerce</option>
+                <option value="Diğer">Diğer</option>
+              </select>
+            </Field>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setStep(2)} className="btn-primary">Devam →</button>
+              <button onClick={skip} className="btn-secondary">Atla</button>
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-2xl font-black text-slate-800">İlk ürününü ekle</h2>
+              <p className="text-slate-500 text-sm mt-1">İsteğe bağlı — sonra da ekleyebilirsin.</p>
+            </div>
+            <Field label="Ürün Adı">
+              <input type="text" value={urunAdi} onChange={e => setUrunAdi(e.target.value)}
+                className="inp" placeholder="ör. Islak Zemin Tabelası" autoFocus />
+            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <MoneyInp label="Satış Fiyatı ($)" value={satisFiyati} onChange={e => setSatisFiyati(e.target.value)} />
+              <MoneyInp label="Tedarik Fiyatı ($)" value={tedarikFiyati} onChange={e => setTedarikFiyati(e.target.value)} />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => complete(false)} disabled={saving} className="btn-primary flex items-center justify-center gap-2">
+                {saving && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />}
+                {urunAdi.trim() ? '+ Ekle & Devam' : 'Devam'}
+              </button>
+              <button onClick={() => { setStep(3); }} className="btn-secondary">Atla</button>
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-5">
+            <div className="text-center">
+              <p className="text-5xl mb-3">🎉</p>
+              <h2 className="text-2xl font-black text-slate-800">Hazırsın!</h2>
+              <p className="text-slate-500 text-sm mt-1">Tüm özellikler seni bekliyor.</p>
+            </div>
+            <div className="space-y-3">
+              {[
+                '📋 Ürün listesi ile dropshipping ürünlerini takip et',
+                '⚖️ Başabaş hesaplayıcı ile kârlılığını ölç',
+                '💰 Sipariş & kâr ekranıyla kazancını izle',
+                '📊 Analitik ile trend ve performansını gör',
+                '🏦 Bütçe & tasarruf ile finansını yönet',
+                '🔑 Ads Keywords bankasından kelime kopyala',
+              ].map(item => (
+                <div key={item} className="flex items-start gap-3 bg-slate-50 rounded-xl p-3">
+                  <span className="text-indigo-600 font-black text-sm mt-0.5">✓</span>
+                  <p className="text-sm text-slate-700 font-medium">{item}</p>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => complete(true)} disabled={saving} className="btn-primary flex items-center justify-center gap-2">
+              {saving && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />}
+              Dashboard'a Git 🚀
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ═══ PROFILE MODAL ═══ */
+function ProfileModal({ user, profile, onClose, onSave }) {
+  const [displayName, setDisplayName] = useState(profile?.display_name || '');
+  const [storeName, setStoreName] = useState(profile?.store_name || '');
+  const [platform, setPlatform] = useState(profile?.platform || 'Shopify');
+  const [saving, setSaving] = useState(false);
+  const [ok, setOk] = useState('');
+
+  const save = async () => {
+    setSaving(true);
+    await sb.from('profiles').update({ display_name: displayName, store_name: storeName, platform }).eq('id', user.id);
+    setSaving(false);
+    setOk('✅ Kaydedildi!');
+    setTimeout(() => setOk(''), 3000);
+    onSave({ display_name: displayName, store_name: storeName, platform });
+  };
+
+  const subStatus = profile?.subscription_status;
+  const subBadge = subStatus === 'active'
+    ? <span className="text-xs bg-emerald-100 text-emerald-700 font-bold px-3 py-1 rounded-full border border-emerald-200">✅ Aktif Abonelik</span>
+    : <span className="text-xs bg-amber-100 text-amber-700 font-bold px-3 py-1 rounded-full border border-amber-200">⏳ Deneme Süresi</span>;
+
+  return (
+    <Modal title="👤 Profil" onClose={onClose}>
+      <div className="space-y-4">
+        <div className="flex items-center gap-4 bg-slate-50 rounded-2xl p-4">
+          <div className="w-14 h-14 rounded-full bg-indigo-600 flex items-center justify-center text-white text-2xl font-black flex-shrink-0">
+            {(user.email || '?')[0].toUpperCase()}
+          </div>
+          <div>
+            <p className="font-bold text-slate-800">{displayName || user.email}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{user.email}</p>
+            <div className="mt-1.5">{subBadge}</div>
+          </div>
+        </div>
+
+        <Field label="Adın / Takma Adın">
+          <input type="text" value={displayName} onChange={e => setDisplayName(e.target.value)} className="inp" />
+        </Field>
+        <Field label="Mağaza Adı">
+          <input type="text" value={storeName} onChange={e => setStoreName(e.target.value)} className="inp" />
+        </Field>
+        <Field label="E-posta (değiştirilemez)">
+          <input type="email" value={user.email} readOnly className="inp bg-slate-50 text-slate-400 cursor-not-allowed" />
+        </Field>
+        <Field label="Platform">
+          <select value={platform} onChange={e => setPlatform(e.target.value)} className="inp">
+            <option value="Shopify">Shopify</option>
+            <option value="WooCommerce">WooCommerce</option>
+            <option value="Diğer">Diğer</option>
+          </select>
+        </Field>
+
+        {ok && <p className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{ok}</p>}
+
+        <div className="flex gap-3 pt-2">
+          <button onClick={save} disabled={saving} className="btn-primary flex items-center justify-center gap-2">
+            {saving && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />}
+            💾 Kaydet
+          </button>
+          <button onClick={onClose} className="btn-secondary">İptal</button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/* ═══ SETTINGS DROPDOWN ═══ */
+function SettingsDropdown({ user, onSignOut, onOpenProfile }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const initial = (user?.email || '?')[0].toUpperCase();
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-9 h-9 rounded-full bg-indigo-600 text-white font-black text-sm flex items-center justify-center hover:bg-indigo-700 transition flex-shrink-0"
+      >
+        {initial}
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', right: 0, top: '44px', background: '#fff',
+          border: '1.5px solid #e2e8f0', borderRadius: '14px', minWidth: '200px',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.12)', zIndex: 200, overflow: 'hidden'
+        }}>
+          <div className="px-4 py-3 border-b border-slate-100">
+            <p className="text-xs font-bold text-slate-800 truncate">{user?.email}</p>
+          </div>
+          <button
+            onClick={() => { setOpen(false); onOpenProfile(); }}
+            className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition flex items-center gap-2 font-medium"
+          >
+            👤 Profil
+          </button>
+          <a
+            href={STRIPE_LINK} target="_blank" rel="noreferrer"
+            onClick={() => setOpen(false)}
+            className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition flex items-center gap-2 font-medium no-underline"
+            style={{ display: 'flex' }}
+          >
+            💳 Abonelik Yönet
+          </a>
+          <div className="border-t border-slate-100 my-0.5" />
+          <button
+            onClick={() => { setOpen(false); onSignOut(); }}
+            className="w-full text-left px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition flex items-center gap-2 font-medium"
+          >
+            🚪 Çıkış Yap
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -977,25 +1339,58 @@ function AdsKeywords() {
    ANA APP
 ═══════════════════════════════════ */
 const TABS = [
-  { id:'urunler',  icon:'📋', label:'Ürün Listesi'    },
-  { id:'basabas',  icon:'⚖️', label:'Başabaş'         },
-  { id:'siparis',  icon:'💰', label:'Sipariş & Kâr'   },
-  { id:'analitik', icon:'📊', label:'Analitik'        },
-  { id:'butce',    icon:'🏦', label:'Bütçe & Tasarruf'},
-  { id:'keywords', icon:'🔑', label:'Ads Keywords'    },
+  { id:'urunler',  icon:'📋', label:'Ürün Listesi',     shortLabel:'Ürünler'  },
+  { id:'basabas',  icon:'⚖️', label:'Başabaş',           shortLabel:'Başabaş'  },
+  { id:'siparis',  icon:'💰', label:'Sipariş & Kâr',     shortLabel:'Sipariş'  },
+  { id:'analitik', icon:'📊', label:'Analitik',          shortLabel:'Analitik' },
+  { id:'butce',    icon:'🏦', label:'Bütçe & Tasarruf',  shortLabel:'Bütçe'    },
+  { id:'keywords', icon:'🔑', label:'Ads Keywords',      shortLabel:'Keywords' },
 ];
 
-function MainApp({ user, profile, trialInfo, onSignOut }) {
+function MainApp({ user, profile, setProfile, trialInfo, onSignOut }) {
   const [tab, setTab] = useState('urunler');
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const userId = user?.id;
   const [urunler,  setUrunler,  urunlerReady]  = useCloudData('products', userId);
   const [gecmis,   setGecmis,   gecmisReady]   = useCloudData('orders',   userId);
   const [budgets,  setBudgets,  budgetsReady]  = useCloudData('budgets',  userId);
   const ready = urunlerReady && gecmisReady && budgetsReady;
 
+  const handleAddProduct = (product) => {
+    setUrunler(p => [product, ...p]);
+  };
+
+  const handleOnboardingComplete = (updatedFields) => {
+    setProfile(prev => ({ ...prev, ...updatedFields, onboarding_completed: true }));
+  };
+
   return (
     <div className="min-h-screen bg-slate-100">
+      {/* Onboarding Wizard — shown as overlay */}
+      {profile && !profile.onboarding_completed && (
+        <OnboardingWizard
+          user={user}
+          onComplete={handleOnboardingComplete}
+          onAddProduct={handleAddProduct}
+        />
+      )}
+
+      {/* Profile Modal */}
+      {profileModalOpen && (
+        <ProfileModal
+          user={user}
+          profile={profile}
+          onClose={() => setProfileModalOpen(false)}
+          onSave={(fields) => setProfile(prev => ({ ...prev, ...fields }))}
+        />
+      )}
+
+      {/* Email verification banner */}
+      <EmailVerifBanner user={user} />
+
+      {/* Trial banner */}
       {trialInfo.status === 'trial' && <TrialBanner daysLeft={trialInfo.daysLeft} />}
+
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-14">
@@ -1006,14 +1401,19 @@ function MainApp({ user, profile, trialInfo, onSignOut }) {
                 <p className="text-xs text-slate-400 leading-none">Dropshipping Dashboard</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <span className="text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full font-bold hidden sm:block">
                 {urunler.length} ürün · {gecmis.length} sipariş
               </span>
-              <button onClick={onSignOut} className="text-xs text-slate-400 hover:text-slate-600 transition px-2">Çıkış</button>
+              <SettingsDropdown
+                user={user}
+                onSignOut={onSignOut}
+                onOpenProfile={() => setProfileModalOpen(true)}
+              />
             </div>
           </div>
-          <div className="flex overflow-x-auto -mb-px">
+          {/* Desktop tabs */}
+          <div className="hidden md:flex overflow-x-auto scrollbar-hide -mb-px">
             {TABS.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)}
                 className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-3 text-sm font-bold border-b-2 transition whitespace-nowrap ${tab===t.id?'border-indigo-600 text-indigo-600':'border-transparent text-slate-400 hover:text-slate-600 hover:border-slate-300'}`}>
@@ -1021,9 +1421,19 @@ function MainApp({ user, profile, trialInfo, onSignOut }) {
               </button>
             ))}
           </div>
+          {/* Mobile tabs (scrollable row) */}
+          <div className="flex md:hidden overflow-x-auto scrollbar-hide -mb-px">
+            {TABS.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                className={`flex-shrink-0 flex items-center gap-1 px-3 py-3 text-xs font-bold border-b-2 transition whitespace-nowrap ${tab===t.id?'border-indigo-600 text-indigo-600':'border-transparent text-slate-400'}`}>
+                <span>{t.icon}</span><span>{t.shortLabel}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </header>
-      <main className="max-w-7xl mx-auto px-4 py-5 pb-10">
+
+      <main className="max-w-7xl mx-auto px-4 py-5 pb-20 md:pb-10">
         {!ready ? (
           <div className="flex items-center justify-center py-20 text-slate-400">
             <div className="text-center"><div className="w-8 h-8 border-4 border-slate-200 border-t-indigo-500 rounded-full spin mx-auto mb-3" /><p className="text-sm">Veriler yükleniyor...</p></div>
@@ -1039,6 +1449,77 @@ function MainApp({ user, profile, trialInfo, onSignOut }) {
           </>
         )}
       </main>
+
+      {/* Mobile bottom navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-30">
+        <div className="flex">
+          {TABS.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex-1 flex flex-col items-center justify-center py-2 gap-0.5 transition ${tab===t.id ? 'text-indigo-600' : 'text-slate-400'}`}
+            >
+              <span className="text-lg leading-none">{t.icon}</span>
+              <span className="text-[10px] font-bold leading-none">{t.shortLabel}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════
+   RESET PASSWORD SCREEN
+═══════════════════════════════════ */
+function ResetPasswordScreen() {
+  const [pw, setPw] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const [ok, setOk] = useState('');
+
+  const kaydet = async () => {
+    setErr('');
+    if (pw.length < 6) return setErr('Şifre en az 6 karakter olmalı');
+    if (pw !== pw2) return setErr('Şifreler eşleşmiyor');
+    setLoading(true);
+    const { error } = await sb.auth.updateUser({ password: pw });
+    setLoading(false);
+    if (error) setErr(error.message);
+    else {
+      setOk('✅ Şifren güncellendi! Yönlendiriliyorsun...');
+      window.location.hash = '';
+      setTimeout(() => window.location.reload(), 1500);
+    }
+  };
+
+  return (
+    <div className="auth-bg">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-xl">
+            <span className="text-3xl font-black text-indigo-600">Y</span>
+          </div>
+          <h1 className="text-3xl font-black text-white">Yeni Şifre</h1>
+          <p className="text-white/70 text-sm mt-1">Yeni şifreni belirle</p>
+        </div>
+        <div className="bg-white rounded-3xl p-8 shadow-2xl space-y-4">
+          <Field label="Yeni Şifre">
+            <input type="password" value={pw} onChange={e => setPw(e.target.value)} className="inp" placeholder="••••••••" />
+          </Field>
+          <Field label="Yeni Şifre Tekrar">
+            <input type="password" value={pw2} onChange={e => setPw2(e.target.value)} className="inp" placeholder="••••••••"
+              onKeyDown={e => e.key === 'Enter' && kaydet()} />
+          </Field>
+          {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</p>}
+          {ok  && <p className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{ok}</p>}
+          <button onClick={kaydet} disabled={loading} className="btn-primary flex items-center justify-center gap-2">
+            {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />}
+            Şifremi Güncelle
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1047,7 +1528,9 @@ function MainApp({ user, profile, trialInfo, onSignOut }) {
    ROOT APP — AUTH STATE MACHINE
 ═══════════════════════════════════ */
 function App() {
-  const [authState, setAuthState] = useState('loading');
+  const [authState, setAuthState] = useState(INITIAL_IS_RECOVERY ? 'recovery' : 'loading');
+  const authStateRef = useRef(INITIAL_IS_RECOVERY ? 'recovery' : 'loading');
+  const setAuthStateBoth = s => { authStateRef.current = s; setAuthState(s); };
   const [user, setUser]     = useState(null);
   const [profile, setProfile] = useState(null);
 
@@ -1059,7 +1542,6 @@ function App() {
         const res = await sb.from('profiles').select('*').eq('id', uid).single();
         data = res.data;
       }
-      // Profil hâlâ yoksa default kullan
       setProfile(data || { id: uid, email: email || '', trial_started_at: new Date().toISOString(), subscription_status: 'trial' });
     } catch(e) {
       setProfile({ id: uid, email: email || '', trial_started_at: new Date().toISOString(), subscription_status: 'trial' });
@@ -1067,26 +1549,37 @@ function App() {
   };
 
   useEffect(() => {
-    sb.auth.getSession().then(({ data: { session } }) => {
-      if (session) { setUser(session.user); loadProfile(session.user.id, session.user.email); setAuthState('authed'); }
-      else setAuthState('guest');
+    // Listener'ı getSession'dan ÖNCE kur — PASSWORD_RECOVERY yakalamak için
+    const { data: { subscription } } = sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') { setAuthStateBoth('recovery'); return; }
+      if (event === 'SIGNED_IN' && authStateRef.current === 'recovery') return;
+      if (session) { setUser(session.user); loadProfile(session.user.id, session.user.email); setAuthStateBoth('authed'); }
+      else { setUser(null); setProfile(null); setAuthStateBoth('guest'); }
     });
-    const { data: { subscription } } = sb.auth.onAuthStateChange((_, session) => {
-      if (session) { setUser(session.user); loadProfile(session.user.id, session.user.email); setAuthState('authed'); }
-      else { setUser(null); setProfile(null); setAuthState('guest'); }
-    });
+
+    // Hash veya query'de recovery token var mı kontrol et
+    const url = window.location.href;
+    if (url.includes('type=recovery') || url.includes('type%3Drecovery')) {
+      setAuthStateBoth('recovery');
+    } else {
+      sb.auth.getSession().then(({ data: { session } }) => {
+        if (session) { setUser(session.user); loadProfile(session.user.id, session.user.email); setAuthStateBoth('authed'); }
+        else setAuthStateBoth('guest');
+      });
+    }
     return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = () => sb.auth.signOut();
+  const signOut = () => { setAuthStateBoth('guest'); sb.auth.signOut(); };
 
-  if (authState === 'loading') return <LoadingScreen />;
-  if (authState === 'guest')   return <AuthScreen />;
+  if (authState === 'loading')   return <LoadingScreen />;
+  if (authState === 'recovery')  return <ResetPasswordScreen />;
+  if (authState === 'guest')     return <AuthScreen />;
 
   const trialInfo = getTrialInfo(profile);
   if (trialInfo.status === 'expired') return <PaywallScreen user={user} onSignOut={signOut} />;
 
-  return <MainApp user={user} profile={profile} trialInfo={trialInfo} onSignOut={signOut} />;
+  return <MainApp user={user} profile={profile} setProfile={setProfile} trialInfo={trialInfo} onSignOut={signOut} />;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
