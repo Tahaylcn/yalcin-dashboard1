@@ -1559,6 +1559,218 @@ function ResetPasswordScreen() {
 }
 
 /* ═══════════════════════════════════
+   LANDING PAGE
+═══════════════════════════════════ */
+function LandingPage() {
+  const [mod, setMod]       = useState('login');
+  const [email, setEmail]   = useState('');
+  const [pw, setPw]         = useState('');
+  const [pw2, setPw2]       = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr]       = useState('');
+  const [ok, setOk]         = useState('');
+
+  const login = async () => {
+    setErr(''); setLoading(true);
+    const { error } = await sb.auth.signInWithPassword({ email, password: pw });
+    setLoading(false);
+    if (error) setErr(error.message === 'Invalid login credentials' ? 'E-posta veya şifre hatalı' : error.message);
+  };
+  const register = async () => {
+    setErr('');
+    if (pw !== pw2) return setErr('Şifreler eşleşmiyor');
+    if (pw.length < 6) return setErr('Şifre en az 6 karakter olmalı');
+    setLoading(true);
+    const { data, error } = await sb.auth.signUp({ email, password: pw });
+    setLoading(false);
+    if (error) {
+      if (error.message.includes('rate limit')) setErr('Çok fazla deneme, 1 saat bekle veya farklı e-posta kullan.');
+      else if (error.message.includes('already registered')) setErr('Bu e-posta kayıtlı, Giriş Yap sekmesini kullan.');
+      else setErr(error.message);
+    } else if (data.session) setOk('✅ Kayıt başarılı! Giriş yapılıyor...');
+    else setOk('✅ Kayıt başarılı! E-postana doğrulama maili gönderildi.');
+  };
+  const sendReset = async () => {
+    setErr(''); setLoading(true);
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://yalify.app' });
+    setLoading(false);
+    if (error) setErr(error.message);
+    else setOk('✅ Sıfırlama linki e-postana gönderildi.');
+  };
+
+  const OZELLIKLER = [
+    { icon:'📦', baslik:'Ürün Takibi',   acik:'Test ürünlerini durumlarıyla takip et' },
+    { icon:'⚖️', baslik:'Başabaş',       acik:'Kaç satışta kâra geçeceğini anında gör' },
+    { icon:'💰', baslik:'Kâr Takibi',    acik:'Günlük net kârını kaydet ve izle' },
+    { icon:'📊', baslik:'Analitik',      acik:'Haftalık kâr grafikleri ve en iyi ürünler' },
+    { icon:'🏦', baslik:'Bütçe',         acik:'%20 otomatik tasarruf, gider takibi' },
+    { icon:'🔑', baslik:'Ads Keywords',  acik:'200+ Facebook keyword, tek tıkla kopyala' },
+  ];
+
+  /* ─── AUTH FORMU ─── */
+  const AuthForm = (
+    <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+      {/* Sekme başlıkları */}
+      {mod !== 'forgot' && (
+        <div className="flex border-b border-slate-100">
+          {[['login','Giriş Yap'],['register','Kayıt Ol']].map(([m,l]) => (
+            <button key={m} onClick={() => { setMod(m); setErr(''); setOk(''); }}
+              className={`flex-1 py-3.5 text-sm font-bold transition border-b-2 ${mod===m ? 'border-indigo-600 text-indigo-600 bg-indigo-50/40' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="p-6 space-y-4">
+        {mod === 'forgot' && (
+          <div>
+            <h3 className="text-base font-black text-slate-800">Şifremi Unuttum</h3>
+            <p className="text-xs text-slate-500 mt-0.5">E-posta adresini gir, sıfırlama linkini gönderelim.</p>
+          </div>
+        )}
+        {mod === 'register' && (
+          <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-3 text-center">
+            <p className="text-sm font-bold text-indigo-700">🎉 {TRIAL_DAYS} gün ücretsiz dene!</p>
+            <p className="text-xs text-indigo-500 mt-0.5">Kredi kartı gerekmez</p>
+          </div>
+        )}
+        <Field label="E-posta">
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            className="inp" placeholder="ornek@email.com" autoComplete="email" />
+        </Field>
+        {mod !== 'forgot' && (
+          <Field label="Şifre">
+            <input type="password" value={pw} onChange={e => setPw(e.target.value)}
+              className="inp" placeholder="••••••••"
+              autoComplete={mod==='login' ? 'current-password' : 'new-password'}
+              onKeyDown={e => e.key==='Enter' && mod==='login' && login()} />
+          </Field>
+        )}
+        {mod === 'register' && (
+          <Field label="Şifre Tekrar">
+            <input type="password" value={pw2} onChange={e => setPw2(e.target.value)}
+              className="inp" placeholder="••••••••"
+              onKeyDown={e => e.key==='Enter' && register()} />
+          </Field>
+        )}
+        {err && <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</p>}
+        {ok  && <p className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{ok}</p>}
+        {mod === 'forgot' ? (
+          <>
+            <button onClick={sendReset} disabled={loading}
+              className="btn-primary flex items-center justify-center gap-2">
+              {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />}
+              Sıfırlama Maili Gönder
+            </button>
+            <button onClick={() => { setMod('login'); setErr(''); setOk(''); }}
+              className="w-full text-center text-xs text-indigo-500 hover:text-indigo-700 font-semibold mt-1">
+              ← Giriş Yap'a dön
+            </button>
+          </>
+        ) : (
+          <>
+            <button onClick={mod==='login' ? login : register} disabled={loading}
+              className="btn-primary flex items-center justify-center gap-2">
+              {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />}
+              {mod==='login' ? 'Giriş Yap' : `Ücretsiz Başla (${TRIAL_DAYS} gün)`}
+            </button>
+            {mod==='login' && (
+              <button onClick={() => { setMod('forgot'); setErr(''); setOk(''); }}
+                className="w-full text-right text-xs text-slate-400 hover:text-indigo-500 transition mt-0.5">
+                Şifremi unuttum?
+              </button>
+            )}
+          </>
+        )}
+      </div>
+      <p className="text-center text-xs text-slate-400 pb-4 px-6">
+        3 gün ücretsiz dene · Kredi kartı gerekmez
+      </p>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen flex flex-col" style={{background:'linear-gradient(135deg,#667eea 0%,#764ba2 50%,#06b6d4 100%)'}}>
+
+      {/* ── NAVBAR ── */}
+      <nav className="flex items-center gap-3 px-6 py-4 md:px-10">
+        <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+          <span className="text-lg font-black text-indigo-600">Y</span>
+        </div>
+        <div>
+          <span className="text-white font-black text-lg leading-none">Yalify</span>
+          <p className="text-white/60 text-xs leading-none mt-0.5 hidden sm:block">Dropshipping Dashboard</p>
+        </div>
+      </nav>
+
+      {/* ── ANA İÇERİK ── */}
+      <div className="flex-1 flex flex-col md:flex-row gap-8 px-6 py-6 md:px-10 md:py-10 max-w-7xl w-full mx-auto">
+
+        {/* SOL — mobilde alttan görünür, masaüstünde soldadır */}
+        <div className="flex-1 flex flex-col justify-center order-2 md:order-1">
+
+          {/* Hero */}
+          <h1 className="text-3xl sm:text-4xl xl:text-5xl font-black text-white leading-tight">
+            Dropshipping kârını<br />
+            <span className="text-yellow-300">gerçekten</span> biliyor musun?
+          </h1>
+          <p className="text-white/75 mt-4 text-base sm:text-lg leading-relaxed max-w-xl">
+            Ürün maliyeti, kargo, reklam, iade — hepsini hesapla.<br className="hidden sm:block" />
+            Günlük kârını takip et. Türkiye'nin dropshipping paneli.
+          </p>
+
+          {/* Rozet satırı */}
+          <div className="flex flex-wrap gap-2 mt-5">
+            {['✓ Başabaş hesaplama','✓ Kâr takibi','✓ Ads Keywords','✓ Ücretsiz 3 gün'].map(r => (
+              <span key={r} className="px-3 py-1.5 rounded-full text-xs font-bold text-white border border-white/30 bg-white/10 backdrop-blur-sm">{r}</span>
+            ))}
+          </div>
+
+          {/* 6 Özellik kartı — 2x3 grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-8">
+            {OZELLIKLER.map(o => (
+              <div key={o.baslik} className="rounded-2xl p-3.5 border border-white/20 backdrop-blur-sm" style={{background:'rgba(255,255,255,0.12)'}}>
+                <p className="text-xl mb-1">{o.icon}</p>
+                <p className="text-white font-bold text-sm leading-tight">{o.baslik}</p>
+                <p className="text-white/65 text-xs mt-0.5 leading-snug">{o.acik}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Alt fiyat notu */}
+          <p className="text-white/50 text-xs mt-6">
+            Kredi kartı gerekmez · 3 gün ücretsiz · Sonrasında $10/ay
+          </p>
+        </div>
+
+        {/* SAĞ — auth formu */}
+        <div className="w-full md:w-96 lg:w-[400px] flex-shrink-0 flex flex-col justify-center order-1 md:order-2">
+          {AuthForm}
+        </div>
+      </div>
+
+      {/* ── FOOTER ── */}
+      <footer style={{background:'rgba(0,0,0,0.25)'}} className="backdrop-blur-sm border-t border-white/10 mt-auto">
+        <div className="max-w-7xl mx-auto px-6 md:px-10 py-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/50">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 bg-white/10 rounded-lg flex items-center justify-center">
+              <span className="font-black text-white text-xs">Y</span>
+            </div>
+            <span className="font-semibold text-white/70">Yalify</span>
+          </div>
+          <div className="flex gap-4">
+            <a href="#" className="hover:text-white transition">Kullanım Şartları</a>
+            <span>·</span>
+            <a href="#" className="hover:text-white transition">Gizlilik</a>
+          </div>
+          <span>© 2026 Yalify</span>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════
    ROOT APP — AUTH STATE MACHINE
 ═══════════════════════════════════ */
 function App() {
@@ -1608,7 +1820,7 @@ function App() {
 
   if (authState === 'loading')   return <LoadingScreen />;
   if (authState === 'recovery')  return <ResetPasswordScreen />;
-  if (authState === 'guest')     return <AuthScreen />;
+  if (authState === 'guest')     return <LandingPage />;
 
   const trialInfo = getTrialInfo(profile);
   if (trialInfo.status === 'expired') return <PaywallScreen user={user} onSignOut={signOut} />;
