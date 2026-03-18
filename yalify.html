@@ -1461,6 +1461,61 @@ function MainApp({ user, profile, setProfile, trialInfo, onSignOut }) {
 }
 
 /* ═══════════════════════════════════
+   RESET PASSWORD SCREEN
+═══════════════════════════════════ */
+function ResetPasswordScreen() {
+  const [pw, setPw] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const [ok, setOk] = useState('');
+
+  const kaydet = async () => {
+    setErr('');
+    if (pw.length < 6) return setErr('Şifre en az 6 karakter olmalı');
+    if (pw !== pw2) return setErr('Şifreler eşleşmiyor');
+    setLoading(true);
+    const { error } = await sb.auth.updateUser({ password: pw });
+    setLoading(false);
+    if (error) setErr(error.message);
+    else {
+      setOk('✅ Şifren güncellendi! Yönlendiriliyorsun...');
+      window.location.hash = '';
+      setTimeout(() => window.location.reload(), 1500);
+    }
+  };
+
+  return (
+    <div className="auth-bg">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-xl">
+            <span className="text-3xl font-black text-indigo-600">Y</span>
+          </div>
+          <h1 className="text-3xl font-black text-white">Yeni Şifre</h1>
+          <p className="text-white/70 text-sm mt-1">Yeni şifreni belirle</p>
+        </div>
+        <div className="bg-white rounded-3xl p-8 shadow-2xl space-y-4">
+          <Field label="Yeni Şifre">
+            <input type="password" value={pw} onChange={e => setPw(e.target.value)} className="inp" placeholder="••••••••" />
+          </Field>
+          <Field label="Yeni Şifre Tekrar">
+            <input type="password" value={pw2} onChange={e => setPw2(e.target.value)} className="inp" placeholder="••••••••"
+              onKeyDown={e => e.key === 'Enter' && kaydet()} />
+          </Field>
+          {err && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</p>}
+          {ok  && <p className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{ok}</p>}
+          <button onClick={kaydet} disabled={loading} className="btn-primary flex items-center justify-center gap-2">
+            {loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin" />}
+            Şifremi Güncelle
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════
    ROOT APP — AUTH STATE MACHINE
 ═══════════════════════════════════ */
 function App() {
@@ -1483,11 +1538,18 @@ function App() {
   };
 
   useEffect(() => {
+    // URL hash'te type=recovery varsa direkt reset ekranını göster
+    const hash = window.location.hash;
+    if (hash && hash.includes('type=recovery')) {
+      setAuthState('recovery');
+      return;
+    }
     sb.auth.getSession().then(({ data: { session } }) => {
       if (session) { setUser(session.user); loadProfile(session.user.id, session.user.email); setAuthState('authed'); }
       else setAuthState('guest');
     });
-    const { data: { subscription } } = sb.auth.onAuthStateChange((_, session) => {
+    const { data: { subscription } } = sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') { setAuthState('recovery'); return; }
       if (session) { setUser(session.user); loadProfile(session.user.id, session.user.email); setAuthState('authed'); }
       else { setUser(null); setProfile(null); setAuthState('guest'); }
     });
@@ -1496,8 +1558,9 @@ function App() {
 
   const signOut = () => sb.auth.signOut();
 
-  if (authState === 'loading') return <LoadingScreen />;
-  if (authState === 'guest')   return <AuthScreen />;
+  if (authState === 'loading')   return <LoadingScreen />;
+  if (authState === 'recovery')  return <ResetPasswordScreen />;
+  if (authState === 'guest')     return <AuthScreen />;
 
   const trialInfo = getTrialInfo(profile);
   if (trialInfo.status === 'expired') return <PaywallScreen user={user} onSignOut={signOut} />;
