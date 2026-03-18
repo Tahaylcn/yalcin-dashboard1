@@ -1688,7 +1688,7 @@ function LandingPage() {
             <><button onClick={mod==='login'?login:register} disabled={loading} className="btn-primary flex items-center justify-center gap-2">{loading && <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full spin"/>}{mod==='login'?'Giriş Yap':`Ücretsiz Başla (${TRIAL_DAYS} gün)`}</button>{mod==='login' && <button onClick={() => { setMod('forgot'); setErr(''); setOk(''); }} className="w-full text-right text-xs text-slate-400 hover:text-indigo-500 mt-0.5">Şifremi unuttum?</button>}</>
           )}
         </div>
-        <p className="text-center text-xs text-slate-400 pb-5 px-6">Devam ederek <a href="#" className="underline">Kullanım Şartlarını</a> kabul etmiş olursunuz</p>
+        <p className="text-center text-xs text-slate-400 pb-5 px-6">Devam ederek <a href="/terms.html" target="_blank" className="underline">Kullanım Şartlarını</a> ve <a href="/privacy.html" target="_blank" className="underline">Gizlilik Politikasını</a> kabul etmiş olursunuz</p>
       </div>
     </div>
   );
@@ -1964,14 +1964,16 @@ function LandingPage() {
             <div>
               <p className="text-white font-bold text-sm mb-3">Yasal</p>
               <div className="space-y-2 text-sm">
-                <p><a href="#" className="hover:text-white transition">Kullanım Şartları</a></p>
-                <p><a href="#" className="hover:text-white transition">Gizlilik Politikası</a></p>
-                <p><a href="#" className="hover:text-white transition">İletişim</a></p>
+                <p><a href="/terms.html" className="hover:text-white transition">Kullanım Şartları</a></p>
+                <p><a href="/privacy.html" className="hover:text-white transition">Gizlilik Politikası</a></p>
+                <p><a href="/refund.html" className="hover:text-white transition">İade Politikası</a></p>
+                <p><a href="/support.html" className="hover:text-white transition">Destek</a></p>
+                <p><a href="mailto:tahaecom5@gmail.com" className="hover:text-white transition">İletişim</a></p>
               </div>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 text-xs">
-            <span>Yalify · Dropshipping Dashboard</span>
+            <span>© 2026 TAHAYLCN LLC · Yalify · <a href="mailto:tahaecom5@gmail.com" className="hover:text-white transition">tahaecom5@gmail.com</a></span>
             <button onClick={() => openModal('register')} className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition text-xs">Ücretsiz Başla →</button>
           </div>
         </div>
