@@ -57,6 +57,13 @@
 <script type="text/babel">
 const { useState, useMemo, useCallback, useEffect, useRef } = React;
 
+/* ═══ RECOVERY CHECK — React mount edilmeden önce URL kontrol ═══ */
+const INITIAL_IS_RECOVERY = (
+  window.location.hash.includes('type=recovery') ||
+  window.location.search.includes('type=recovery') ||
+  window.location.href.includes('type=recovery')
+);
+
 /* ═══ SUPABASE ═══ */
 const SUPA_URL = 'https://iqbjzltpwidtwjpkjnvb.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlxYmp6bHRwd2lkdHdqcGtqbnZiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3ODEwNjUsImV4cCI6MjA4OTM1NzA2NX0.FoBUxvtzX8vHgfA6q_84Ysg80cZsF4iO5xQ4QTCv_RU';
@@ -1519,8 +1526,8 @@ function ResetPasswordScreen() {
    ROOT APP — AUTH STATE MACHINE
 ═══════════════════════════════════ */
 function App() {
-  const [authState, setAuthState] = useState('loading');
-  const authStateRef = useRef('loading');
+  const [authState, setAuthState] = useState(INITIAL_IS_RECOVERY ? 'recovery' : 'loading');
+  const authStateRef = useRef(INITIAL_IS_RECOVERY ? 'recovery' : 'loading');
   const setAuthStateBoth = s => { authStateRef.current = s; setAuthState(s); };
   const [user, setUser]     = useState(null);
   const [profile, setProfile] = useState(null);
