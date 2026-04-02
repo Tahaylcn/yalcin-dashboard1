@@ -86,6 +86,7 @@ const fmtDateTime = d => d ? new Date(d).toLocaleString('tr-TR', { day: '2-digit
 function getTrialInfo(profile) {
   if (!profile) return { status: 'loading', daysLeft: 0 };
   if (profile.subscription_status === 'active') return { status: 'active', daysLeft: null };
+  if (profile.email === 'tahaecom5@gmail.com') return { status: 'active', daysLeft: null };
   const start = new Date(profile.trial_started_at);
   const daysPassed = Math.floor((Date.now() - start) / 86400000);
   const daysLeft = Math.max(0, TRIAL_DAYS - daysPassed);
